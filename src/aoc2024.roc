@@ -19,7 +19,11 @@ main! = |_args|
     Ok {}
 
 sols : List Solution
-sols = [solution_day_01, solution_day_02, solution_day_03]
+sols = [
+    solution_day_01,
+    solution_day_02,
+    solution_day_03,
+]
 
 run_solution! : Solution => Str
 run_solution! = |sol|
