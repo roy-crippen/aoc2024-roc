@@ -6,6 +6,8 @@ import pf.Stdout
 import pf.Utc
 import Util exposing [Solution, red, green, blue]
 import Day01 exposing [solution_day_01]
+import Day02 exposing [solution_day_02]
+import Day03 exposing [solution_day_03]
 
 main! = |_args|
     sols
@@ -17,7 +19,7 @@ main! = |_args|
     Ok {}
 
 sols : List Solution
-sols = [solution_day_01, solution_day_01, solution_day_01]
+sols = [solution_day_01, solution_day_02, solution_day_03]
 
 run_solution! : Solution => Str
 run_solution! = |sol|
