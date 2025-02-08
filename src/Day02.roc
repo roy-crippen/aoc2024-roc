@@ -38,10 +38,7 @@ part2 = |_in_str| Ok 42
 # expect part2 input_str == Ok expected_part2
 
 count_safe : List (List I16) -> U64
-count_safe = |xss|
-    xss
-    |> List.map |xs| if is_safe xs then 1 else 0
-    |> List.sum
+count_safe = |xss| List.walk xss 0 |acc, xs| if is_safe xs then acc + 1 else acc
 
 parse : Str -> Result (List (List I16)) [InvalidNumStr]
 parse = |in_str|
