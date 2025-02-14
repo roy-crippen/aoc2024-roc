@@ -7,7 +7,7 @@ import pf.Utc
 import Util exposing [Solution, red, green, blue]
 import Day01 exposing [solution_day_01]
 import Day02 exposing [solution_day_02]
-import Day03 exposing [solution_day_03]
+import Day09 exposing [solution_day_09]
 
 main! = |_args|
     sols
@@ -22,7 +22,7 @@ sols : List Solution
 sols = [
     solution_day_01,
     solution_day_02,
-    solution_day_03,
+    solution_day_09,
 ]
 
 run_solution! : Solution => Str
@@ -43,7 +43,8 @@ run_part! = |(sol, is_part1)|
     time_start = Utc.now!({})
     res = f sol.input_str
     time_end = Utc.now!({})
-    duration = Utc.delta_as_millis(time_end, time_start)
+    duration_us = Utc.delta_as_nanos(time_end, time_start) // 1000
+    (duration, duration_str) = if duration_us > 1000 then (duration_us // 1000, "ms") else (duration_us, "µs")
     # dbg duration
 
     when res is
@@ -51,8 +52,8 @@ run_part! = |(sol, is_part1)|
             if
                 v == expected
             then
-                green "(v: ${Num.to_str v}, dur: ${Num.to_str duration}ms)"
+                green "(v: ${Num.to_str v}, dur: ${Num.to_str duration}${duration_str})"
             else
-                red "${Num.to_str v} != expected ${Num.to_str expected}"
+                red "${Num.to_str v} != expected ${Num.to_str expected}💩"
 
         _ -> red "failed to execute"
