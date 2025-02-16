@@ -3,6 +3,9 @@ module [solution_day_09]
 import Util exposing [Solution]
 import "../data/day_09.txt" as input_str : Str
 
+Hole : { len : U32, start_idx : U64 }
+File : { len : U32, start_idx : U64, val : I32 }
+
 solution_day_09 : Solution
 solution_day_09 = {
     day: 9,
@@ -24,7 +27,7 @@ part1 = |in_str|
     in_str
     |> parse
     |> expand_disk
-    |> compress
+    |> compress_part1
     |> Result.map_err |_e| "failed to compress the disk"
     |> try
     |> check_sum
@@ -34,42 +37,18 @@ expect part1 example_str_1 == Ok 1928
 expect part1 input_str == Ok expected_part1
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str| Ok 42
+part2 = |in_str|
+    in_str
+    |> parse
+    |> expand_disk
+    |> compress_part2
+    |> Result.map_err |_e| "failed to compress the disk"
+    |> try
+    |> check_sum
+    |> Ok
 
-# expect part2 example_str_1 == Ok 2858
-# expect part2 input_str == Ok expected_part2
-
-get_hole_idxs : List I32 -> List U64
-get_hole_idxs = |xs| xs |> List.walk_with_index [] |ls, x, idx| if x == -1 then List.append(ls, idx) else ls
-
-# get_files_reverse : List I32 -> List I32
-# get_files_reverse = |xs|
-#     xs
-#     |> List.walk [] |ls, x| if x != -1 then List.append(ls, x) else ls
-#     |> List.reverse
-
-compress : List I32 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
-compress = |fs|
-    go = |ls, hole_idxs, hole_cnt|
-        if
-            ls |> List.take_last hole_cnt |> List.all |v| v == -1
-        then
-            Ok ls
-        else
-            { before, others } = List.split_at hole_idxs 1
-            hole_idx = List.get(before, 0)?
-            file_idx = (List.find_last_index ls |v| v != -1)?
-            ls1 = List.swap ls hole_idx file_idx
-            go ls1 others hole_cnt
-
-    holes = get_hole_idxs fs
-    go fs holes (List.len holes)
-
-check_sum : List I32 -> U64
-check_sum = |fs| fs |> List.walk_with_index(0, |acc, v, idx| if v > 0 then acc + (Num.to_u64 v) * idx else acc)
-
-# get_hole_cnt : List I32 -> U64
-# get_hole_cnt = |fs| fs |> List.walk 0 |acc, v| if v == -1 then acc + 1 else acc
+expect part2 example_str_1 == Ok 2858
+expect part2 input_str == Ok expected_part2
 
 parse : Str -> List I32
 parse = |in_str|
@@ -78,23 +57,7 @@ parse = |in_str|
     |> List.map |u| (Num.to_i32 u) - 48
 
 expand_disk : List I32 -> List I32
-expand_disk = |xs|
-    xs
-    |> List.walk_with_index(
-        ([], 0),
-        |(rs, id), cnt, idx|
-            if
-                Num.is_even idx
-            then
-                (List.concat rs (List.repeat id (Num.to_u64 cnt)), id + 1)
-            else
-                (List.concat rs (List.repeat -1 (Num.to_u64 cnt)), id),
-    )
-    |> .0
-
-expand_disk_rec : List I32 -> List I32
-expand_disk_rec = |inputs_|
-
+expand_disk = |inputs_|
     go : List I32, I32, I32, List I32 -> List I32
     go = |inputs, idx, id, results|
         when inputs is
@@ -120,6 +83,148 @@ expand_disk_rec = |inputs_|
 
     go inputs_ 0 0 []
 
+compress_part1 : List I32 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
+compress_part1 = |fs|
+    go : List I32, List U64, U64 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
+    go = |ls, hole_idxs, hole_cnt|
+        if
+            ls |> List.take_last hole_cnt |> List.all |v| v == -1
+        then
+            Ok ls
+        else
+            { before, others } = List.split_at hole_idxs 1
+            hole_idx = List.get(before, 0)?
+            file_idx = (List.find_last_index ls |v| v != -1)?
+            ls1 = List.swap ls hole_idx file_idx
+            go ls1 others hole_cnt
+
+    holes = get_hole_idxs fs
+    go fs holes (List.len holes)
+
+check_sum : List I32 -> U64
+check_sum = |fs| fs |> List.walk_with_index(0, |acc, v, idx| if v > 0 then acc + (Num.to_u64 v) * idx else acc)
+
+compress_part2 : List I32 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
+compress_part2 = |xs|
+    go = |xs0, holes0, files0|
+        when files0 is
+            [] -> Ok xs0
+            [file, .. as rest_files0] ->
+                when find_next_hole_idx(holes0, file) is
+                    Ok hole_idx ->
+                        hole = List.get(holes0, hole_idx)?
+                        (xs1, updated_hole) = fill_hole(xs0, hole, file)
+                        holes1 = List.set(holes0, hole_idx, updated_hole)
+                        holes2 = remove_empty_hole_records(holes1)
+                        go xs1 holes2 rest_files0
+
+                    _ -> go xs0 holes0 rest_files0
+
+    holes = get_hole_groups xs
+    files = List.reverse (get_file_groups xs)
+    go xs holes files
+
+get_hole_idxs : List I32 -> List U64
+get_hole_idxs = |xs| xs |> List.walk_with_index [] |ls, x, idx| if x == -1 then List.append(ls, idx) else ls
+
+get_hole_groups : List I32 -> List Hole
+get_hole_groups = |xs|
+    go : List I32, U64, List Hole, [Nothing, Start U64], U32 -> List Hole
+    go = |list, index, acc, current_seq, seq_len|
+        when list is
+            [] ->
+                when current_seq is
+                    Nothing -> acc
+                    Start start_idx -> List.append acc { start_idx, len: seq_len }
+
+            [head, .. as rest] ->
+                if head == -1 then
+                    when current_seq is
+                        Nothing -> go rest (index + 1) acc (Start index) 1
+                        Start start_idx -> go rest (index + 1) acc (Start start_idx) (seq_len + 1)
+                else
+                    when current_seq is
+                        Nothing -> go rest (index + 1) acc Nothing 0
+                        Start start_idx ->
+                            new_acc = List.append acc { start_idx, len: seq_len }
+                            go rest (index + 1) new_acc Nothing 0
+
+    go xs 0 [] Nothing 0
+
+get_file_groups : List I32 -> List File
+get_file_groups = |xs|
+    go : List I32, U64, List File, [Nothing, Start { idx : U64, val : I32 }], U32 -> List File
+    go = |list, index, acc, current_seq, seq_len|
+        when list is
+            [] ->
+                when current_seq is
+                    Nothing -> acc
+                    Start { idx: start_idx, val } -> List.append acc { len: seq_len, start_idx: start_idx, val }
+
+            [head, .. as rest] ->
+                if head == -1 then
+                    when current_seq is
+                        Nothing -> go rest (index + 1) acc Nothing 0
+                        Start { idx: start_idx, val } ->
+                            new_acc = List.append acc { len: seq_len, start_idx, val }
+                            go rest (index + 1) new_acc Nothing 0
+                else
+                    when current_seq is
+                        Nothing -> go rest (index + 1) acc (Start { idx: index, val: head }) 1
+                        Start { idx: start_idx, val } ->
+                            if val == head then
+                                go rest (index + 1) acc (Start { idx: start_idx, val }) (seq_len + 1)
+                            else
+                                new_acc = List.append acc { len: seq_len, start_idx, val }
+                                go rest (index + 1) new_acc (Start { idx: index, val: head }) 1
+
+    go xs 0 [] Nothing 0
+
+remove_empty_hole_records : List Hole -> List Hole
+remove_empty_hole_records = |hole_recs| hole_recs |> List.keep_if |{ len }| len > 0
+
+find_next_hole_idx : List Hole, File -> Result U64 [NotFound]
+find_next_hole_idx = |holes, file|
+    holes |> List.find_first_index |hole| hole.len >= file.len and hole.start_idx < file.start_idx
+
+fill_hole : List I32, Hole, File -> (List I32, Hole)
+fill_hole = |xs, hole, file|
+    go : List I32, Hole, File, U32 -> (List I32, Hole)
+    go = |xs0, hole0, file0, cnt|
+        when cnt is
+            0 -> (xs0, hole0)
+            _ ->
+                xs1 = List.swap xs0 file0.start_idx hole0.start_idx
+                hole1 = { len: hole0.len - 1, start_idx: hole0.start_idx + 1 }
+                file1 = { len: file0.len - 1, start_idx: file0.start_idx + 1, val: file0.val }
+                go xs1 hole1 file1 (cnt - 1)
+
+    go xs hole file file.len
+
+expect
+    xs0 = [0, 0, -1, -1, -1, 1, 1, 1, -1, -1, -1, 2, -1, -1, -1, 3, 3, 3, -1, 4, 4, -1, 5, 5, 5, 5, -1, 6, 6, 6, 6, -1, 7, 7, 7, -1, 8, 8, 8, 8, 9, 9]
+    xs1 = [0, 0, 9, 9, -1, 1, 1, 1, -1, -1, -1, 2, -1, -1, -1, 3, 3, 3, -1, 4, 4, -1, 5, 5, 5, 5, -1, 6, 6, 6, 6, -1, 7, 7, 7, -1, 8, 8, 8, 8, -1, -1]
+    expected = (xs1, { start_idx: 4, len: 1 })
+    got = fill_hole xs0 { start_idx: 2, len: 3 } { len: 2, start_idx: 40, val: 9 }
+    expected == got
+
+expect
+    holes = [{ start_idx: 2, len: 3 }, { start_idx: 8, len: 3 }]
+    expected = Ok 0
+    got = find_next_hole_idx(holes, { len: 2, start_idx: 40, val: 9 })
+    expected == got
+
+expect
+    holes = [{ start_idx: 2, len: 3 }, { start_idx: 8, len: 3 }]
+    expected = Err NotFound
+    got = find_next_hole_idx(holes, { len: 4, start_idx: 36, val: 8 })
+    expected == got
+
+expect
+    expected = [{ start_idx: 2, len: 3 }, { start_idx: 12, len: 3 }]
+    got = [{ start_idx: 2, len: 3 }, { start_idx: 8, len: 0 }, { start_idx: 12, len: 3 }] |> remove_empty_hole_records
+    expected == got
+
 expect
     expected = [2, 3, 3, 3, 1, 3, 3, 1, 2, 1, 4, 1, 4, 1, 3, 1, 4, 0, 2]
     got = example_str_1 |> parse
@@ -131,8 +236,33 @@ expect
     expected == got
 
 expect
-    expected = [0, 0, -1, -1, -1, 1, 1, 1, -1, -1, -1, 2, -1, -1, -1, 3, 3, 3, -1, 4, 4, -1, 5, 5, 5, 5, -1, 6, 6, 6, 6, -1, 7, 7, 7, -1, 8, 8, 8, 8, 9, 9]
-    got = example_str_1 |> parse |> expand_disk_rec
+    expected = [
+        { start_idx: 2, len: 3 },
+        { start_idx: 8, len: 3 },
+        { start_idx: 12, len: 3 },
+        { start_idx: 18, len: 1 },
+        { start_idx: 21, len: 1 },
+        { start_idx: 26, len: 1 },
+        { start_idx: 31, len: 1 },
+        { start_idx: 35, len: 1 },
+    ]
+    got = example_str_1 |> parse |> expand_disk |> get_hole_groups
+    expected == got
+
+expect
+    expected = [
+        { len: 2, start_idx: 0, val: 0 },
+        { len: 3, start_idx: 5, val: 1 },
+        { len: 1, start_idx: 11, val: 2 },
+        { len: 3, start_idx: 15, val: 3 },
+        { len: 2, start_idx: 19, val: 4 },
+        { len: 4, start_idx: 22, val: 5 },
+        { len: 4, start_idx: 27, val: 6 },
+        { len: 3, start_idx: 32, val: 7 },
+        { len: 4, start_idx: 36, val: 8 },
+        { len: 2, start_idx: 40, val: 9 },
+    ]
+    got = example_str_1 |> parse |> expand_disk |> get_file_groups
     expected == got
 
 expect
@@ -142,13 +272,8 @@ expect
 
 expect
     expected = [2, 3, 4, 8, 9, 10, 12, 13, 14, 18, 21, 26, 31, 35]
-    got = example_str_1 |> parse |> expand_disk |> get_hole_idxs |> dbg
+    got = example_str_1 |> parse |> expand_disk |> get_hole_idxs
     expected == got
-
-# expect
-#     expected = [9, 9, 8, 8, 8, 8, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 3, 3, 3, 2, 1, 1, 1, 0, 0]
-#     got = example_str_1 |> parse |> expand_disk |> get_files_reverse |> dbg
-#     expected == got
 
 example_str_1 : Str
 example_str_1 = "2333133121414131402"
