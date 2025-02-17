@@ -101,6 +101,9 @@ compress_part1 = |fs|
     holes = get_hole_idxs fs
     go fs holes (List.len holes)
 
+get_hole_idxs : List I32 -> List U64
+get_hole_idxs = |xs| xs |> List.walk_with_index [] |ls, x, idx| if x == -1 then List.append(ls, idx) else ls
+
 check_sum : List I32 -> U64
 check_sum = |fs| fs |> List.walk_with_index(0, |acc, v, idx| if v > 0 then acc + (Num.to_u64 v) * idx else acc)
 
@@ -109,76 +112,70 @@ compress_part2 = |xs|
     go = |xs0, holes0, files0|
         when files0 is
             [] -> Ok xs0
-            [file, .. as rest_files0] ->
+            [file, .. as rest_files] ->
                 when find_next_hole_idx(holes0, file) is
                     Ok hole_idx ->
                         hole = List.get(holes0, hole_idx)?
                         (xs1, updated_hole) = fill_hole(xs0, hole, file)
                         holes1 = List.set(holes0, hole_idx, updated_hole)
                         holes2 = remove_empty_hole_records(holes1)
-                        go xs1 holes2 rest_files0
+                        go xs1 holes2 rest_files
 
-                    _ -> go xs0 holes0 rest_files0
+                    _ -> go xs0 holes0 rest_files
 
     holes = get_hole_groups xs
     files = List.reverse (get_file_groups xs)
     go xs holes files
 
-get_hole_idxs : List I32 -> List U64
-get_hole_idxs = |xs| xs |> List.walk_with_index [] |ls, x, idx| if x == -1 then List.append(ls, idx) else ls
-
 get_hole_groups : List I32 -> List Hole
 get_hole_groups = |xs|
-    go : List I32, U64, List Hole, [Nothing, Start U64], U32 -> List Hole
-    go = |list, index, acc, current_seq, seq_len|
-        when list is
-            [] ->
-                when current_seq is
-                    Nothing -> acc
-                    Start start_idx -> List.append acc { start_idx, len: seq_len }
+    xs
+    |> List.walk_with_index ([], None) |(holes, prev_hole_opt), v, idx|
+        if
+            v == -1
+        then
+            when prev_hole_opt is
+                Some prev_hole -> (holes, Some { len: prev_hole.len + 1, start_idx: prev_hole.start_idx })
+                None -> (holes, Some { len: 1, start_idx: idx })
+        else
+            when prev_hole_opt is
+                Some prev_hole ->
+                    holes1 = List.append holes prev_hole
+                    (holes1, None)
 
-            [head, .. as rest] ->
-                if head == -1 then
-                    when current_seq is
-                        Nothing -> go rest (index + 1) acc (Start index) 1
-                        Start start_idx -> go rest (index + 1) acc (Start start_idx) (seq_len + 1)
-                else
-                    when current_seq is
-                        Nothing -> go rest (index + 1) acc Nothing 0
-                        Start start_idx ->
-                            new_acc = List.append acc { start_idx, len: seq_len }
-                            go rest (index + 1) new_acc Nothing 0
-
-    go xs 0 [] Nothing 0
+                None -> (holes, None)
+    |> .0
 
 get_file_groups : List I32 -> List File
 get_file_groups = |xs|
-    go : List I32, U64, List File, [Nothing, Start { idx : U64, val : I32 }], U32 -> List File
-    go = |list, index, acc, current_seq, seq_len|
-        when list is
-            [] ->
-                when current_seq is
-                    Nothing -> acc
-                    Start { idx: start_idx, val } -> List.append acc { len: seq_len, start_idx: start_idx, val }
 
-            [head, .. as rest] ->
-                if head == -1 then
-                    when current_seq is
-                        Nothing -> go rest (index + 1) acc Nothing 0
-                        Start { idx: start_idx, val } ->
-                            new_acc = List.append acc { len: seq_len, start_idx, val }
-                            go rest (index + 1) new_acc Nothing 0
-                else
-                    when current_seq is
-                        Nothing -> go rest (index + 1) acc (Start { idx: index, val: head }) 1
-                        Start { idx: start_idx, val } ->
-                            if val == head then
-                                go rest (index + 1) acc (Start { idx: start_idx, val }) (seq_len + 1)
-                            else
-                                new_acc = List.append acc { len: seq_len, start_idx, val }
-                                go rest (index + 1) new_acc (Start { idx: index, val: head }) 1
+    (result_files, last_file_opt) = List.walk_with_index xs ([], None) |(files, prev_file_opt), v, idx|
+        if
+            v != -1
+        then
+            when prev_file_opt is
+                Some prev_file ->
+                    if
+                        prev_file.val == v
+                    then
+                        new_file = { len: prev_file.len + 1, start_idx: prev_file.start_idx, val: prev_file.val }
+                        (files, Some new_file)
+                    else
+                        files1 = List.append files prev_file
+                        (files1, Some { len: 1, start_idx: idx, val: v })
 
-    go xs 0 [] Nothing 0
+                None -> (files, Some { len: 1, start_idx: idx, val: v })
+        else
+            when prev_file_opt is
+                Some prev_file ->
+                    files1 = List.append files prev_file
+                    (files1, None)
+
+                None -> (files, None)
+
+    when last_file_opt is
+        Some last_file -> List.append result_files last_file
+        None -> result_files
 
 remove_empty_hole_records : List Hole -> List Hole
 remove_empty_hole_records = |hole_recs| hole_recs |> List.keep_if |{ len }| len > 0

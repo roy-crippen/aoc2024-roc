@@ -1,4 +1,4 @@
-module [red, green, blue, Solution, Option]
+module [red, green, blue, Solution]
 
 Solution : {
     day : U64,
@@ -17,5 +17,3 @@ green = |str| "\u(001b)[0;32m${str}\u(001b)[0m"
 
 red : Str -> Str
 red = |str| "\u(001b)[0;31m${str}\u(001b)[0m"
-
-Option a : [Some a, None]
