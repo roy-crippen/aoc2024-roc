@@ -67,19 +67,9 @@ expand_disk = |inputs_|
                 if
                     Num.is_even idx
                 then
-                    go(
-                        rest,
-                        idx + 1,
-                        id + 1,
-                        List.concat results (List.repeat id cnt),
-                    )
+                    go(rest, idx + 1, id + 1, List.concat results (List.repeat id cnt))
                 else
-                    go(
-                        rest,
-                        idx + 1,
-                        id,
-                        List.concat results (List.repeat -1 cnt),
-                    )
+                    go(rest, idx + 1, id, List.concat results (List.repeat -1 cnt))
 
     go inputs_ 0 0 []
 

@@ -75,25 +75,11 @@ diffs = |(xs, ys)| List.map2 xs ys Num.abs_diff
 freq : (List U64, List U64) -> U64
 freq = |(xs, ys)|
     xs
-    |> List.map(
-        |x|
-            ys
-            |> List.walk(0, |acc, y| if x == y then acc + x else acc),
-    )
+    |> List.map(|x| ys |> List.walk(0, |acc, y| if x == y then acc + x else acc))
     |> List.sum
 
 expect
-    expected = Ok
-        (
-            [
-                (3, 4),
-                (4, 3),
-                (2, 5),
-                (1, 3),
-                (3, 9),
-                (3, 3),
-            ]
-        )
+    expected = Ok ([(3, 4), (4, 3), (2, 5), (1, 3), (3, 9), (3, 3)])
     got = parse example_str
     expected == got
 
