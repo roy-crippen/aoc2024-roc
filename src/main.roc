@@ -8,6 +8,7 @@ import pf.Utc
 import Util exposing [Solution, red, green, blue]
 import Day01 exposing [solution_day_01]
 import Day02 exposing [solution_day_02]
+import Day03 exposing [solution_day_03]
 import Day06 exposing [solution_day_06]
 import Day09 exposing [solution_day_09]
 
@@ -24,6 +25,7 @@ sols : List Solution
 sols = [
     solution_day_01,
     solution_day_02,
+    solution_day_03,
     solution_day_06,
     solution_day_09,
 ]

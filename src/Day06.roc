@@ -147,7 +147,7 @@ parse = |in_str|
     ls =
         xss
         |> List.join
-        |> List.keep_if |v| v.ch != '.'
+          |> List.keep_if |v| v.ch != '.'
 
     # get the start position
     start_idx = (ls |> List.find_first_index |v| v.ch == '^')?
