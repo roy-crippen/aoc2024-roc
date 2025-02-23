@@ -67,7 +67,7 @@ evaluate = |muls|
             _ -> acc
 
 parse : Str -> List Op
-parse = |s| parse_loop (Str.to_utf8 s) [] |> dbg
+parse = |s| parse_loop (Str.to_utf8 s) []
 
 parse_loop : List U8, List Op -> List Op
 parse_loop = |xs, ops|
@@ -76,11 +76,11 @@ parse_loop = |xs, ops|
         [_, .. as rest] ->
             when parse_partial(parse_op, xs) is
                 Ok { val: op, input: remaining } ->
-                    dbg (Str.from_utf8 remaining)
+                    # dbg (Str.from_utf8 remaining)
                     parse_loop(remaining, List.append(ops, op))
 
                 Err _ ->
-                    dbg (Str.from_utf8 rest)
+                    # dbg (Str.from_utf8 rest)
                     parse_loop(rest, ops)
 
 parse_op : Parser (List U8) Op
@@ -108,20 +108,20 @@ parse_mul =
 expect parse_str parse_mul "mul(123,456)" == Ok (Mul 123 456)
 expect parse_str parse_mul "mul(123,456]" |> Result.is_err
 
-# expect
-#    expected = [Mul 2 4, Mul 5 5, Mul 11 8, Mul 8 5]
-#    got = parse example_str1 |> dbg
-#    expected == got
+expect
+    expected = [Mul 2 4, Mul 5 5, Mul 11 8, Mul 8 5]
+    got = parse example_str1 |> dbg
+    expected == got
 
-# expect
-#    expected = [Mul 2 4, Dont, Mul 5 5, Mul 11 8, Do, Mul 8 5]
-#    got = parse example_str2 |> dbg
-#    expected == got
+expect
+    expected = [Mul 2 4, Dont, Mul 5 5, Mul 11 8, Do, Mul 8 5]
+    got = parse example_str2 |> dbg
+    expected == got
 
-# expect
-#    expected = [Mul 2 4, Mul 8 5]
-#    got = parse example_str2 |> filter_part2 |> dbg
-#    expected == got
+expect
+    expected = [Mul 2 4, Mul 8 5]
+    got = parse example_str2 |> filter_part2 |> dbg
+    expected == got
 
 example_str1 : Str
 example_str1 = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"

@@ -5,14 +5,20 @@ app [main!] {
 
 import pf.Stdout
 import pf.Utc
-import Util exposing [Solution, red, green, blue]
+import Str exposing [concat, count_utf8_bytes, repeat]
+import Util exposing [Solution, blue, green, orange, red, yellow]
 import Day01 exposing [solution_day_01]
 import Day02 exposing [solution_day_02]
 import Day03 exposing [solution_day_03]
 import Day06 exposing [solution_day_06]
 import Day09 exposing [solution_day_09]
+import Day99 exposing [solution_day_99]
 
 main! = |_args|
+    _ = Stdout.line! "\n"
+    _ = Stdout.line! (blue "        -------- part 1 --------  -------- part 2 --------")
+    _ = Stdout.line! (blue "   day          value       time          value       time")
+    _ = Stdout.line! (blue "------  -------------  ---------  -------------  ---------")
     sols
     |> List.for_each!(
         |sol|
@@ -28,15 +34,18 @@ sols = [
     solution_day_03,
     solution_day_06,
     solution_day_09,
+    solution_day_99,
 ]
 
 run_solution! : Solution => Str
 run_solution! = |sol|
+    day_str = Num.to_str sol.day
+    day_formated = if count_utf8_bytes day_str == 1 then concat "     " day_str else concat "    " day_str
     Str.join_with
         [
-            blue "day ${Num.to_str sol.day} -> part1: ",
+            blue "${day_formated}",
             run_part! (sol, Bool.true),
-            blue ", part2: ",
+            # blue ", part2: ",
             run_part! (sol, Bool.false),
         ]
         ""
@@ -49,7 +58,14 @@ run_part! = |(sol, is_part1)|
     res = f sol.input_str
     time_end = Utc.now!({})
     duration_us = Utc.delta_as_nanos(time_end, time_start) // 1000
-    (duration, duration_str) = if duration_us > 1000 then (duration_us // 1000, "ms") else (duration_us, "µs")
+    (duration, duration_str, color) =
+        if
+            duration_us > 1000
+        then
+            duration_ms = duration_us // 1000
+            if duration_ms < 500 then (duration_us // 1000, "ms", yellow) else (duration_us // 1000, "ms", orange)
+        else
+            (duration_us, "µs", green)
     # dbg duration
 
     when res is
@@ -57,8 +73,31 @@ run_part! = |(sol, is_part1)|
             if
                 v == expected
             then
-                green "(v: ${Num.to_str v}, dur: ${Num.to_str duration}${duration_str})"
+                v_str = Num.to_str v
+                v_spaces = repeat(" ", 15 - count_utf8_bytes v_str)
+                v_str_formatted = concat v_spaces v_str
+                dur_str = Num.to_str duration
+                dur_spaces = repeat(" ", 8 - count_utf8_bytes dur_str)
+                dur_str_formatted = concat dur_spaces dur_str
+                color "${v_str_formatted} ${dur_str_formatted}${duration_str}"
             else
                 red "${Num.to_str v} != expected ${Num.to_str expected}💩"
 
         _ -> red "failed to execute"
+
+# when res is
+#    Ok v ->
+#        if
+#            v == expected
+#        then
+#            v_str = Num.to_str v
+#            v_spaces = repeat(" ", 10 - count_utf8_bytes v_str)
+#            v_str_formatted = concat v_spaces v_str
+#            dur_str = Num.to_str duration
+#            dur_spaces = repeat(" ", 6 - count_utf8_bytes dur_str)
+#            dur_str_formatted = concat dur_spaces dur_str
+#            green "(v: ${v_str_formatted}, dur: ${dur_str_formatted}${duration_str})"
+#        else
+#            red "${Num.to_str v} != expected ${Num.to_str expected}💩"
+
+#    _ -> red "failed to execute"
