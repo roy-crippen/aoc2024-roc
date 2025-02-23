@@ -30,8 +30,8 @@ part1 = |in_str|
     |> evaluate
     |> Ok
 
-# expect part1 example_str1 == Ok 161
-# expect part1 input_str == Ok expected_part1
+expect part1 example_str1 == Ok 161
+expect part1 input_str == Ok expected_part1
 
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
@@ -42,7 +42,7 @@ part2 = |in_str|
     |> Ok
 
 expect part2 example_str2 == Ok 48
-# expect part2 input_str == Ok expected_part2
+expect part2 input_str == Ok expected_part2
 
 filter_part2 : List Op -> List Op
 filter_part2 = |ops| filter_part2_loop([], ops, Bool.true)
@@ -75,13 +75,8 @@ parse_loop = |xs, ops|
         [] -> ops
         [_, .. as rest] ->
             when parse_partial(parse_op, xs) is
-                Ok { val: op, input: remaining } ->
-                    # dbg (Str.from_utf8 remaining)
-                    parse_loop(remaining, List.append(ops, op))
-
-                Err _ ->
-                    # dbg (Str.from_utf8 rest)
-                    parse_loop(rest, ops)
+                Ok { val: op, input: remaining } -> parse_loop(remaining, List.append(ops, op))
+                Err _ -> parse_loop(rest, ops)
 
 parse_op : Parser (List U8) Op
 parse_op = one_of([parse_mul, parse_do_or_dont])

@@ -45,7 +45,6 @@ run_solution! = |sol|
         [
             blue "${day_formated}",
             run_part! (sol, Bool.true),
-            # blue ", part2: ",
             run_part! (sol, Bool.false),
         ]
         ""
@@ -66,7 +65,6 @@ run_part! = |(sol, is_part1)|
             if duration_ms < 500 then (duration_us // 1000, "ms", yellow) else (duration_us // 1000, "ms", orange)
         else
             (duration_us, "µs", green)
-    # dbg duration
 
     when res is
         Ok v ->
@@ -84,20 +82,3 @@ run_part! = |(sol, is_part1)|
                 red "${Num.to_str v} != expected ${Num.to_str expected}💩"
 
         _ -> red "failed to execute"
-
-# when res is
-#    Ok v ->
-#        if
-#            v == expected
-#        then
-#            v_str = Num.to_str v
-#            v_spaces = repeat(" ", 10 - count_utf8_bytes v_str)
-#            v_str_formatted = concat v_spaces v_str
-#            dur_str = Num.to_str duration
-#            dur_spaces = repeat(" ", 6 - count_utf8_bytes dur_str)
-#            dur_str_formatted = concat dur_spaces dur_str
-#            green "(v: ${v_str_formatted}, dur: ${dur_str_formatted}${duration_str})"
-#        else
-#            red "${Num.to_str v} != expected ${Num.to_str expected}💩"
-
-#    _ -> red "failed to execute"
