@@ -12,7 +12,6 @@ import Day02 exposing [solution_day_02]
 import Day03 exposing [solution_day_03]
 import Day06 exposing [solution_day_06]
 import Day09 exposing [solution_day_09]
-import Day99 exposing [solution_day_99]
 
 main! = |_args|
     _ = Stdout.line! "\n"
@@ -34,7 +33,6 @@ sols = [
     solution_day_03,
     solution_day_06,
     solution_day_09,
-    solution_day_99,
 ]
 
 run_solution! : Solution => Str
@@ -59,10 +57,10 @@ run_part! = |(sol, is_part1)|
     duration_us = Utc.delta_as_nanos(time_end, time_start) // 1000
     (duration, duration_str, color) =
         if
-            duration_us > 1000
+            duration_us > 5000
         then
             duration_ms = duration_us // 1000
-            if duration_ms < 500 then (duration_us // 1000, "ms", yellow) else (duration_us // 1000, "ms", orange)
+            if duration_ms < 500 then (duration_ms, "ms", yellow) else (duration_ms, "ms", orange)
         else
             (duration_us, "µs", green)
 
@@ -79,6 +77,7 @@ run_part! = |(sol, is_part1)|
                 dur_str_formatted = concat dur_spaces dur_str
                 color "${v_str_formatted} ${dur_str_formatted}${duration_str}"
             else
-                red "${Num.to_str v} != expected ${Num.to_str expected}💩"
+                dbg duration
+                red " --- ${Num.to_str v} != expected ${Num.to_str expected} ---"
 
         _ -> red "failed to execute"

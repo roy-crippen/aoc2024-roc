@@ -13,13 +13,13 @@ blue : Str -> Str
 blue = |str| "\u(001b)[0;34m${str}\u(001b)[0m"
 
 green : Str -> Str
-green = |str| "\u(001b)[0;32m${str}\u(001b)[0m"
+green = |str| "\u(001b)[38;5;46m${str}\u(001b)[0m"
 
 red : Str -> Str
 red = |str| "\u(001b)[0;31m${str}\u(001b)[0m"
 
 yellow : Str -> Str
-yellow = |str| "\u(001b)[0;33m${str}\u(001b)[0m"
+yellow = |str| "\u(001b)[38;5;226m${str}\u(001b)[0m"
 
 orange : Str -> Str
-orange = |str| "\u(001b)[0;91m${str}\u(001b)[0m"
+orange = |str| "\u(001b)[38;5;208m${str}\u(001b)[0m"
