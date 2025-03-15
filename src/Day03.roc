@@ -1,11 +1,7 @@
 module [solution_day_03]
-
-import parser.String exposing [parse_str, digits, string, codeunit, one_of]
-import parser.Parser exposing [Parser, parse_partial]
+import Bool exposing [true, false]
 import Util exposing [Solution]
 import "../data/day_03.txt" as input_str : Str
-
-Op : [Do, Dont, Mul U64 U64]
 
 solution_day_03 : Solution
 solution_day_03 = {
@@ -26,8 +22,8 @@ expected_part2 = 111762583
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     in_str
-    |> parse
-    |> evaluate
+    |> parse_mul_pairs
+    |> List.walk(0, |acc, (v1, v2)| acc + Num.to_u64 v1 * Num.to_u64 v2)
     |> Ok
 
 expect part1 example_str1 == Ok 161
@@ -36,87 +32,72 @@ expect part1 input_str == Ok expected_part1
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
     in_str
-    |> parse
-    |> filter_part2
-    |> evaluate
+    |> remove_donts
+    |> parse_mul_pairs
+    |> List.walk(0, |acc, (v1, v2)| acc + Num.to_u64 v1 * Num.to_u64 v2)
     |> Ok
 
 expect part2 example_str2 == Ok 48
 expect part2 input_str == Ok expected_part2
 
-filter_part2 : List Op -> List Op
-filter_part2 = |ops| filter_part2_loop([], ops, Bool.true)
+parse_mul_pairs : Str -> List (U32, U32)
+parse_mul_pairs = |input|
+    input
+    |> Str.to_utf8
+    |> List.walk { pairs: [], current: [], after_mul: false, in_numbers: false } process_char
+    |> .pairs
 
-filter_part2_loop : List Op, List Op, Bool -> List Op
-filter_part2_loop = |acc, ops, is_do|
-    when ops is
-        [] -> acc
-        [op, .. as rest] ->
-            when op is
-                Mul _ _ if is_do -> filter_part2_loop(List.append acc op, rest, is_do)
-                Mul _ _ -> filter_part2_loop(acc, rest, is_do)
-                Do -> filter_part2_loop(acc, rest, Bool.true)
-                Dont -> filter_part2_loop(acc, rest, Bool.false)
+ParseMulState : { pairs : List (U32, U32), current : List U8, after_mul : Bool, in_numbers : Bool }
+process_char : ParseMulState, U8 -> ParseMulState
+process_char = |state, char|
+    when char is
+        'l' if List.len state.current >= 2 and List.sublist state.current { start: List.len state.current - 2, len: 2 } == ['m', 'u'] ->
+            { state & after_mul: true, current: List.append state.current char }
 
-evaluate : List Op -> U64
-evaluate = |muls|
-    muls
-    |> List.walk 0 |acc, op|
-        when op is
-            Mul v1 v2 -> acc + v1 * v2
-            _ -> acc
+        '(' if state.after_mul ->
+            { state & current: [], after_mul: false, in_numbers: true }
 
-parse : Str -> List Op
-parse = |s| parse_loop (Str.to_utf8 s) []
+        ')' if state.in_numbers ->
+            nums = Str.split_on (Str.from_utf8 state.current |> Result.with_default "") ","
+            when nums is
+                [first, second] ->
+                    when (Str.to_u32 first, Str.to_u32 second) is
+                        (Ok n1, Ok n2) ->
+                            pairs = List.append state.pairs (n1, n2)
+                            { state & pairs, current: [], after_mul: false, in_numbers: false }
 
-parse_loop : List U8, List Op -> List Op
-parse_loop = |xs, ops|
-    when xs is
-        [] -> ops
-        [_, .. as rest] ->
-            when parse_partial(parse_op, xs) is
-                Ok { val: op, input: remaining } -> parse_loop(remaining, List.append(ops, op))
-                Err _ -> parse_loop(rest, ops)
+                        _ ->
+                            { state & current: [], after_mul: false, in_numbers: false }
 
-parse_op : Parser (List U8) Op
-parse_op = one_of([parse_mul, parse_do_or_dont])
+                _ ->
+                    { state & current: [], after_mul: false, in_numbers: false }
 
-parse_do_or_dont : Parser (List U8) Op
-parse_do_or_dont = one_of(
-    [
-        string("do()") |> Parser.map |_| Do,
-        string("don't()") |> Parser.map |_| Dont,
-    ],
-)
+        _ if state.in_numbers ->
+            { state & current: List.append state.current char }
 
-parse_mul : Parser (List U8) Op
-parse_mul =
-    { Parser.map2 <-
-        _: string "mul(",
-        a: digits,
-        _: codeunit ',',
-        b: digits,
-        _: codeunit ')',
-    }
-    |> Parser.map |{ a, b }| Mul a b
+        _ ->
+            { state & current: List.append state.current char, after_mul: false }
 
-expect parse_str parse_mul "mul(123,456)" == Ok (Mul 123 456)
-expect parse_str parse_mul "mul(123,456]" |> Result.is_err
+remove_donts : Str -> Str
+remove_donts = |input|
+    parsed = input |> Str.to_utf8 |> List.walk { prev: [], keep: [], is_do: true } process_char1
+    Str.from_utf8(parsed.keep) |> Result.with_default ""
 
-expect
-    expected = [Mul 2 4, Mul 5 5, Mul 11 8, Mul 8 5]
-    got = parse example_str1 |> dbg
-    expected == got
+StateDont : { prev : List U8, keep : List U8, is_do : Bool }
+process_char1 : StateDont, U8 -> StateDont
+process_char1 = |st, char|
+    st1 = { st & prev: List.append st.prev char }
+    st2 = if st1.is_do then { st1 & keep: List.append st1.keep char } else st1
+    when char is
+        ')' ->
+            donts = List.sublist st2.prev { start: List.len st2.prev - 7, len: 7 }
+            dos = donts |> List.drop_first 3
+            when (dos, donts) is
+                (['d', 'o', '(', ')'], _) -> { st2 & is_do: true }
+                (_, ['d', 'o', 'n', '\'', 't', '(', ')']) -> { st2 & is_do: false }
+                (_, _) -> st2
 
-expect
-    expected = [Mul 2 4, Dont, Mul 5 5, Mul 11 8, Do, Mul 8 5]
-    got = parse example_str2 |> dbg
-    expected == got
-
-expect
-    expected = [Mul 2 4, Mul 8 5]
-    got = parse example_str2 |> filter_part2 |> dbg
-    expected == got
+        _ -> st2
 
 example_str1 : Str
 example_str1 = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"

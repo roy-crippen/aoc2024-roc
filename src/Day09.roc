@@ -64,9 +64,7 @@ expand_disk = |inputs_|
             [] -> results
             [v, .. as rest] ->
                 cnt = Num.to_u64 v
-                if
-                    Num.is_even idx
-                then
+                if Num.is_even idx then
                     go(rest, idx + 1, id + 1, List.concat results (List.repeat id cnt))
                 else
                     go(rest, idx + 1, id, List.concat results (List.repeat -1 cnt))
@@ -77,9 +75,7 @@ compress_part1 : List I32 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
 compress_part1 = |fs|
     go : List I32, List U64, U64 -> [Err [NotFound, OutOfBounds], Ok (List I32)]
     go = |ls, hole_idxs, hole_cnt|
-        if
-            ls |> List.take_last hole_cnt |> List.all |v| v == -1
-        then
+        if ls |> List.take_last hole_cnt |> List.all |v| v == -1 then
             Ok ls
         else
             { before, others } = List.split_at hole_idxs 1
@@ -121,9 +117,7 @@ get_hole_groups : List I32 -> List Hole
 get_hole_groups = |xs|
     xs
     |> List.walk_with_index ([], None) |(holes, prev_hole_opt), v, idx|
-        if
-            v == -1
-        then
+        if v == -1 then
             when prev_hole_opt is
                 Some prev_hole -> (holes, Some { len: prev_hole.len + 1, start_idx: prev_hole.start_idx })
                 None -> (holes, Some { len: 1, start_idx: idx })
@@ -145,9 +139,7 @@ get_file_groups = |xs|
         then
             when prev_file_opt is
                 Some prev_file ->
-                    if
-                        prev_file.val == v
-                    then
+                    if prev_file.val == v then
                         new_file = { len: prev_file.len + 1, start_idx: prev_file.start_idx, val: prev_file.val }
                         (files, Some new_file)
                     else
