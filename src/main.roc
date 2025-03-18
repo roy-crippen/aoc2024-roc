@@ -10,6 +10,7 @@ import Util exposing [Solution, blue, green, orange, red, yellow]
 import Day01 exposing [solution_day_01]
 import Day02 exposing [solution_day_02]
 import Day03 exposing [solution_day_03]
+import Day04 exposing [solution_day_04]
 import Day06 exposing [solution_day_06]
 import Day09 exposing [solution_day_09]
 
@@ -31,6 +32,7 @@ sols = [
     solution_day_01,
     solution_day_02,
     solution_day_03,
+    solution_day_04,
     solution_day_06,
     solution_day_09,
 ]
@@ -77,7 +79,6 @@ run_part! = |(sol, is_part1)|
                 dur_str_formatted = concat dur_spaces dur_str
                 color "${v_str_formatted} ${dur_str_formatted}${duration_str}"
             else
-                dbg duration
                 red " --- ${Num.to_str v} != expected ${Num.to_str expected} ---"
 
         _ -> red "failed to execute"

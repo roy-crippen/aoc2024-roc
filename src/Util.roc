@@ -1,4 +1,10 @@
-module [blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+module [unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+
+unwrap : [Err *, Ok a], Str -> a
+unwrap = |result, message|
+    when result is
+        Ok(x) -> x
+        Err(_) -> crash(message)
 
 Solution : {
     day : U64,
