@@ -44,17 +44,13 @@ expect part2 input_str == Ok expected_part2
 cross_xmas : Grid U8, Pos -> [Err [NotFound, OutOfBounds], Ok U64]
 cross_xmas = |g, pos|
     # nw and se
-    pos_nw = Grid.north_west pos
-    nw = (Grid.get g pos_nw)?
-    pos_se = Grid.south_east pos
-    se = (Grid.get g pos_se)?
+    nw = (Grid.get g (Grid.north_west pos))?
+    se = (Grid.get g (Grid.south_east pos))?
     nw_se_ok = (nw == 'M' and se == 'S') or (nw == 'S' and se == 'M')
 
     # ne and sw
-    pos_ne = Grid.north_east pos
-    ne = (Grid.get g pos_ne)?
-    pos_sw = Grid.south_west pos
-    sw = (Grid.get g pos_sw)?
+    ne = (Grid.get g (Grid.north_east pos))?
+    sw = (Grid.get g (Grid.south_west pos))?
     ne_sw_ok = (ne == 'M' and sw == 'S') or (ne == 'S' and sw == 'M')
 
     if nw_se_ok and ne_sw_ok then Ok 1 else Err NotFound
