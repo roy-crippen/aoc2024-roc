@@ -40,7 +40,7 @@ part2 = |in_str|
 
 expect part2 example_str == Ok 9
 expect part2 input_str == Ok expected_part2
-#
+
 cross_xmas : Grid U8, Pos -> [Err [NotFound, OutOfBounds], Ok U64]
 cross_xmas = |g, pos|
     # nw and se
@@ -85,10 +85,15 @@ check_xmas_in_dir = |g, pos, dir|
         ('M', 'A', 'S') -> Ok 1
         _ -> Err NotFound
 
-expect Ok 1 == check_xmas_in_dir (parse example_str) (0, 4) SE |> dbg
+expect Ok 1 == check_xmas_in_dir (parse example_str) (0, 4) SE
 
 parse : Str -> Grid U8
-parse = |s| Str.split_on s "\n" |> List.map Str.to_utf8
+parse = |s|
+    ls = Str.split_on s "\n" |> List.map Str.to_utf8
+    rows = List.len ls
+    cols = List.get ls 0 |> Util.unwrap "should be at least 1 row" |> List.len
+    data = List.join ls
+    { data, rows, cols }
 
 example_str : Str
 example_str =
