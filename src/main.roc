@@ -11,6 +11,7 @@ import Day01 exposing [solution_day_01]
 import Day02 exposing [solution_day_02]
 import Day03 exposing [solution_day_03]
 import Day04 exposing [solution_day_04]
+import Day05 exposing [solution_day_05]
 import Day06 exposing [solution_day_06]
 import Day09 exposing [solution_day_09]
 
@@ -33,6 +34,7 @@ sols = [
     solution_day_02,
     solution_day_03,
     solution_day_04,
+    solution_day_05,
     solution_day_06,
     solution_day_09,
 ]

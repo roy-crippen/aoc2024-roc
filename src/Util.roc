@@ -1,4 +1,17 @@
-module [unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+module [zip, window_by_2, unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+
+zip : List a, List b -> List (a, b)
+zip = |a, b| List.map2(a, b, |x, y| (x, y))
+
+expect zip [1, 2, 3] [4, 5, 6] == [(1, 4), (2, 5), (3, 6)]
+
+window_by_2 : List a -> List (a, a)
+window_by_2 = |xs|
+    cs = List.drop_last xs 1
+    ds = List.drop_first xs 1
+    zip cs ds
+
+expect window_by_2 [1, 2, 3, 4] == [(1, 2), (2, 3), (3, 4)]
 
 unwrap : [Err *, Ok a], Str -> a
 unwrap = |result, message|
