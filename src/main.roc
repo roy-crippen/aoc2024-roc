@@ -13,13 +13,14 @@ import Day03 exposing [solution_day_03]
 import Day04 exposing [solution_day_04]
 import Day05 exposing [solution_day_05]
 import Day06 exposing [solution_day_06]
+import Day07 exposing [solution_day_07]
 import Day09 exposing [solution_day_09]
 
 main! = |_args|
     _ = Stdout.line! "\n"
     _ = Stdout.line! (blue "        -------- part 1 --------  -------- part 2 --------")
-    _ = Stdout.line! (blue "   day          value       time          value       time")
-    _ = Stdout.line! (blue "------  -------------  ---------  -------------  ---------")
+    _ = Stdout.line! (blue "   day            value     time            value     time")
+    _ = Stdout.line! (blue "------  ---------------  -------  ---------------  -------")
     sols
     |> List.for_each!(
         |sol|
@@ -36,6 +37,7 @@ sols = [
     solution_day_04,
     solution_day_05,
     solution_day_06,
+    solution_day_07,
     solution_day_09,
 ]
 
@@ -74,12 +76,12 @@ run_part! = |(sol, is_part1)|
                 v == expected
             then
                 v_str = Num.to_str v
-                v_spaces = repeat(" ", 15 - count_utf8_bytes v_str)
+                v_spaces = repeat(" ", 17 - count_utf8_bytes v_str)
                 v_str_formatted = concat v_spaces v_str
                 dur_str = Num.to_str duration
-                dur_spaces = repeat(" ", 8 - count_utf8_bytes dur_str)
+                dur_spaces = repeat(" ", 6 - count_utf8_bytes dur_str)
                 dur_str_formatted = concat dur_spaces dur_str
-                color "${v_str_formatted} ${dur_str_formatted}${duration_str}"
+                "${blue v_str_formatted} ${color dur_str_formatted}${color duration_str}"
             else
                 red " --- ${Num.to_str v} != expected ${Num.to_str expected} ---"
 
