@@ -69,6 +69,8 @@ parse = |in_str|
     lss = Str.split_on in_str "\n" |> List.map Str.to_utf8
     rows = List.len lss |> Num.to_i32
     cols = List.get lss 0 |> Util.unwrap "should be at least 1 row" |> List.len |> Num.to_i32
+
+    ys : List (U8, (I32, I32))
     ys =
         lss
         |>
@@ -78,6 +80,7 @@ parse = |in_str|
         |> List.keep_if |vs| vs != []
         |> List.join
 
+    ants : List (U8, List (I32, I32))
     ants =
         ys
         |> List.walk Dict.empty({}) |acc_dict, (ch, pos)|
@@ -90,7 +93,7 @@ parse = |in_str|
                     Dict.insert acc_dict ch (List.single pos)
         |> Dict.to_list
 
-    { rows, cols, ants: ants }
+    { rows, cols, ants }
 
 example_str : Str
 example_str =
