@@ -14,6 +14,7 @@ import Day04 exposing [solution_day_04]
 import Day05 exposing [solution_day_05]
 import Day06 exposing [solution_day_06]
 import Day07 exposing [solution_day_07]
+import Day08 exposing [solution_day_08]
 import Day09 exposing [solution_day_09]
 
 main! = |_args|
@@ -38,6 +39,7 @@ sols = [
     solution_day_05,
     solution_day_06,
     solution_day_07,
+    solution_day_08,
     solution_day_09,
 ]
 

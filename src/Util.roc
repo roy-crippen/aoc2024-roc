@@ -1,9 +1,22 @@
-module [zip, window_by_2, unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+module [zip, unzip, window_by_2, unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
 
 zip : List a, List b -> List (a, b)
 zip = |a, b| List.map2(a, b, |x, y| (x, y))
 
 expect zip [1, 2, 3] [4, 5, 6] == [(1, 4), (2, 5), (3, 6)]
+
+unzip : List (a, b) -> (List a, List b)
+unzip = |xs| unzip_loop xs [] []
+
+unzip_loop : List (a, b), List a, List b -> (List a, List b)
+unzip_loop = |xs, one, other|
+    when xs is
+        [] -> (one, other)
+        [(first_one, first_other), .. as rest] ->
+            unzip_loop rest (List.append one first_one) (List.append other first_other)
+
+expect unzip [(1, 4), (2, 5), (3, 6)] == ([1, 2, 3], [4, 5, 6])
+expect unzip [(1, 'a'), (2, 'b'), (3, 'c')] == ([1, 2, 3], ['a', 'b', 'c'])
 
 window_by_2 : List a -> List (a, a)
 window_by_2 = |xs|
