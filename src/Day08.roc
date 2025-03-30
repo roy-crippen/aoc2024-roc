@@ -43,8 +43,8 @@ part2 = |in_str|
     |> Set.len
     |> Ok
 
-expect part2 example_str |> dbg == Ok 34
-expect part2 input_str |> dbg == Ok expected_part2
+expect part2 example_str == Ok 34
+expect part2 input_str == Ok expected_part2
 
 make_combos : List Pos -> Set (Pos, Pos)
 make_combos = |xs|
@@ -84,13 +84,10 @@ make_antis_part1 = |combos, rows, cols|
 
     anti_set
 
-#
 make_antis : Pos, Pos, I32, I32 -> List Pos
 make_antis = |pos1_, pos2_, rows_, cols_|
     go : Pos, Pos, I32, I32, List Pos -> List Pos
     go = |pos1, pos2, rows, cols, res0|
-        # dbg (pos1, pos2)
-        # res1 = List.concat res0 [pos1, pos2]
         when make_anti pos1 pos2 rows cols is
             Ok(pos3) ->
                 res1 = go pos2 pos3 rows cols (List.append res0 pos3)
@@ -100,7 +97,6 @@ make_antis = |pos1_, pos2_, rows_, cols_|
 
     go pos1_ pos2_ rows_ cols_ []
 
-#
 make_antis_part2 : Set (Pos, Pos), I32, I32 -> Set Pos
 make_antis_part2 = |combos, rows, cols|
     anti_list = Set.walk combos [] |acc0, (pos1, pos2)|
@@ -108,7 +104,6 @@ make_antis_part2 = |combos, rows, cols|
         acc2 = List.concat acc1 (make_antis pos1 pos2 rows cols)
         List.concat acc2 (make_antis pos2 pos1 rows cols)
 
-    # dbg anti_list
     Set.from_list anti_list
 
 parse : Str -> Board
