@@ -16,6 +16,7 @@ module [
     south_west,
     south,
     south_east,
+    east,
     north_east,
     apply4,
     apply8,
@@ -70,8 +71,8 @@ idx_to_pos = |idx, rows, cols|
 # returns the value in the grid at (r, c)
 get : Grid a, Pos -> [Err [OutOfBounds], Ok a]
 get = |g, pos|
-    r =  Num.to_u64 pos.0
-    c =  Num.to_u64 pos.1
+    r = Num.to_u64 pos.0
+    c = Num.to_u64 pos.1
     if r >= 0 and r < g.rows and c >= 0 and c < g.cols then
         (List.get g.data (pos_to_idx pos g.cols))? |> Ok
     else

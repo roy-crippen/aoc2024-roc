@@ -1,4 +1,17 @@
-module [zip, unzip, window_by_2, unwrap, blue, green, orange, red, yellow, Solution, k_combos_without_reps]
+module [
+    zip,
+    unzip,
+    window_by_2,
+    unique,
+    unwrap,
+    blue,
+    green,
+    orange,
+    red,
+    yellow,
+    Solution,
+    k_combos_without_reps,
+]
 
 zip : List a, List b -> List (a, b)
 zip = |a, b| List.map2(a, b, |x, y| (x, y))
@@ -25,6 +38,9 @@ window_by_2 = |xs|
     zip cs ds
 
 expect window_by_2 [1, 2, 3, 4] == [(1, 2), (2, 3), (3, 4)]
+
+unique : List a -> List a where a implements Hash & Eq
+unique = |xs| xs |> Set.from_list |> Set.to_list
 
 unwrap : [Err *, Ok a], Str -> a
 unwrap = |result, message|
