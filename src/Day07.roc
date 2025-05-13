@@ -62,7 +62,7 @@ expect eval_1 161011 [16, 10, 13] == Bool.false
 eval_2 : U64, List U64 -> Bool
 eval_2 = |res, vals|
     when vals is
-        [v] -> v == res
+        [] -> Bool.false
         [v1, v2] -> v1 + v2 == res or v1 * v2 == res or concat_u64 v1 v2 == res
         _ ->
             val = List.last vals |> unwrap "List.last failed"
