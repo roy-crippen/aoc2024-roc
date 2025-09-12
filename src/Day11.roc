@@ -84,16 +84,10 @@ expect digits_cnt 12345 == 5
 expect digits_cnt 123457689 == 9
 expect digits_cnt 1 == 1
 
-power_10 : U64 -> U64
-power_10 = |n| if n == 0 then 1 else 10 * power_10 (n - 1)
-
-expect power_10 2 == 100
-expect power_10 4 == 10000
-
 split : U64 -> (U64, U64)
 split = |n|
     digits = digits_cnt n
-    divisor = power_10 (digits // 2)
+    divisor = Num.pow_int 10 (digits // 2)
     (n // divisor, n % divisor)
 
 expect split 5 == (5, 0)

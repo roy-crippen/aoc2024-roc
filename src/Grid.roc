@@ -5,7 +5,7 @@ module [
     make,
     show,
     show_char,
-    is_inside,
+    contains,
     get,
     set,
     find_positions,
@@ -53,8 +53,8 @@ show_char = |g|
     |> Str.replace_each "\"" ""
 
 # returns true if pos is inside the grid otherwise false
-is_inside : Grid a, Pos -> Bool
-is_inside = |g, pos|
+contains : Grid a, Pos -> Bool
+contains = |g, pos|
     r = pos.0 |> Num.to_u64
     c = pos.1 |> Num.to_u64
     r >= 0 and r < g.rows and c >= 0 and c < g.cols
