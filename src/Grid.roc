@@ -18,6 +18,7 @@ module [
     south_east,
     east,
     north_east,
+    neighbors4,
     apply4,
     apply8,
 ]
@@ -78,7 +79,7 @@ get = |g, pos|
     else
         Err OutOfBounds
 
-# return a new graid after setting the value in the grid at (r, c)
+# return a new grid after setting the value in the grid at (r, c)
 set : Grid a, Pos, a -> Grid a where a implements Inspect
 set = |g, pos, v| { g & data: List.set g.data (pos_to_idx pos g.cols) v }
 
@@ -107,6 +108,9 @@ south = |pos| move pos S
 south_east = |pos| move pos SE
 east = |pos| move pos E
 north_east = |pos| move pos NE
+
+neighbors4 : Pos -> List Pos
+neighbors4 = |pos| [north pos, west pos, south pos, east pos]
 
 apply4 : Grid a, Pos, (Grid a, Pos -> b) -> List b
 apply4 = |g, pos, f| [
