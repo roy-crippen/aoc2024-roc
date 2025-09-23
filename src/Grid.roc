@@ -5,7 +5,7 @@ module [
     make,
     show,
     show_char,
-    contains,
+    is_inside,
     get,
     set,
     find_positions,
@@ -19,6 +19,8 @@ module [
     east,
     north_east,
     neighbors4,
+    neighbor_values4,
+    neighbor_values8_tup,
     apply4,
     apply8,
 ]
@@ -54,11 +56,11 @@ show_char = |g|
     |> Str.replace_each "\"" ""
 
 # returns true if pos is inside the grid otherwise false
-contains : Grid a, Pos -> Bool
-contains = |g, pos|
+is_inside : Grid a, Pos -> Bool
+is_inside = |g, pos|
     r = pos.0 |> Num.to_u64
     c = pos.1 |> Num.to_u64
-    r >= 0 and r < g.rows and c >= 0 and c < g.cols
+    r < g.rows and c < g.cols
 
 pos_to_idx : Pos, U64 -> U64
 pos_to_idx = |(r, c), cols| (Num.to_u64 r) * cols + (Num.to_u64 c)
@@ -111,6 +113,41 @@ north_east = |pos| move pos NE
 
 neighbors4 : Pos -> List Pos
 neighbors4 = |pos| [north pos, west pos, south pos, east pos]
+
+neighbor_values4 : Grid a, Pos -> List (Pos, [Err [OutOfBounds], Ok a])
+neighbor_values4 = |g, pos|
+    (n, w, s, e) = (north pos, west pos, south pos, east pos)
+    [
+        (n, get g n),
+        (w, get g w),
+        (s, get g s),
+        (e, get g e),
+    ]
+
+neighbor_values8_tup :
+    Grid a,
+    Pos
+    -> (
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+    )
+neighbor_values8_tup = |g, pos|
+    (
+        get g (north pos),
+        get g (north_west pos),
+        get g (west pos),
+        get g (south_west pos),
+        get g (south pos),
+        get g (south_east pos),
+        get g (east pos),
+        get g (north_east pos),
+    )
 
 apply4 : Grid a, Pos, (Grid a, Pos -> b) -> List b
 apply4 = |g, pos, f| [
