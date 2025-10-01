@@ -110,7 +110,7 @@ parse : Str -> Board
 parse = |in_str|
     lss = Str.split_on in_str "\n" |> List.map Str.to_utf8
     rows = List.len lss |> Num.to_i32
-    cols = List.get lss 0 |> Util.unwrap "should be at least 1 row" |> List.len |> Num.to_i32
+    cols = List.get lss 0 |> Util.msg_unwrap "should be at least 1 row" |> List.len |> Num.to_i32
 
     ys : List (U8, Pos)
     ys =

@@ -74,7 +74,7 @@ is_in_order = |rules, xs|
     Util.window_by_2 xs
     |> List.walk_until true |acc, (curr, next)|
         if Dict.contains rules curr then
-            set0 = Dict.get rules curr |> Util.unwrap "Dict.get failed"
+            set0 = Dict.get rules curr |> Util.msg_unwrap "Dict.get failed"
             if Set.contains set0 next then Continue acc else Break false
         else
             Break false
@@ -82,15 +82,15 @@ is_in_order = |rules, xs|
 parse : Str -> (Rules, List (List U16))
 parse = |s|
     rec = Str.split_on s "\n" |> List.split_on "" |> List.split_at 1
-    s_rules = rec.before |> List.first |> Util.unwrap "List.first failed"
-    s_updates = rec.others |> List.first |> Util.unwrap "List.first failed"
+    s_rules = rec.before |> List.first |> Util.msg_unwrap "List.first failed"
+    s_updates = rec.others |> List.first |> Util.msg_unwrap "List.first failed"
 
     pairs =
         List.map s_rules |ss|
             when Str.split_on ss "|" is
                 [s1, s2] ->
-                    v1 = Str.to_u16 s1 |> Util.unwrap "Str.to_u16 fail"
-                    v2 = Str.to_u16 s2 |> Util.unwrap "Str.to_u16 fail"
+                    v1 = Str.to_u16 s1 |> Util.msg_unwrap "Str.to_u16 fail"
+                    v2 = Str.to_u16 s2 |> Util.msg_unwrap "Str.to_u16 fail"
                     (v1, v2)
 
                 _ -> crash("parse failed")
@@ -100,7 +100,7 @@ parse = |s|
     rules = List.walk pairs new_dict |acc_dict, pair|
         (k, v) = pair
         if Dict.contains acc_dict k then
-            set0 = Dict.get acc_dict k |> Util.unwrap "Dict.get failed"
+            set0 = Dict.get acc_dict k |> Util.msg_unwrap "Dict.get failed"
             set1 = Set.insert set0 v
             Dict.insert acc_dict k set1
         else
@@ -110,7 +110,7 @@ parse = |s|
 
     updates = List.map s_updates |s1|
         Str.split_on s1 ","
-        |> List.map |s2| Str.to_u16 s2 |> Util.unwrap "Str.to_u16 failed"
+        |> List.map |s2| Str.to_u16 s2 |> Util.msg_unwrap "Str.to_u16 failed"
 
     (rules, updates)
 

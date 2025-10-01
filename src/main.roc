@@ -19,6 +19,7 @@ import Day08 exposing [solution_day_08]
 import Day10 exposing [solution_day_10]
 import Day11 exposing [solution_day_11]
 import Day12 exposing [solution_day_12]
+import Day13 exposing [solution_day_13]
 
 main! = |_args|
     sols
@@ -43,6 +44,7 @@ sols = [
     solution_day_10,
     solution_day_11,
     solution_day_12,
+    solution_day_13,
 ]
 
 run_solution! : Solution => Str
@@ -86,4 +88,4 @@ run_part! = |(sol, is_part1)|
 
         _ -> red "failed to execute"
 
-# Util.unwrap res "aaa" |> Num.to_str
+# Util.msg_unwrap res "aaa" |> Num.to_str

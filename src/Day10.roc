@@ -50,7 +50,7 @@ scores = |g, pos| scores_loop g pos []
 
 scores_loop : Grid U8, Pos, List Pos -> List Pos
 scores_loop = |g, pos, rs|
-    pos_val = Grid.get g pos |> Util.unwrap "Grid.get failed"
+    pos_val = Grid.get g pos |> Util.msg_unwrap "Grid.get failed"
     if pos_val == 9 then
         List.append rs pos
     else
@@ -59,7 +59,7 @@ scores_loop = |g, pos, rs|
         |> List.map |res|
             when res is
                 Ok p ->
-                    new_v = Grid.get g p |> Util.unwrap "Grid.get failed"
+                    new_v = Grid.get g p |> Util.msg_unwrap "Grid.get failed"
                     if new_v == pos_val + 1 then
                         scores g p
                     else
@@ -72,7 +72,7 @@ parse : Str -> Grid U8
 parse = |s|
     ls = Str.split_on s "\n" |> List.map Str.to_utf8
     rows = List.len ls
-    cols = List.get ls 0 |> Util.unwrap "should be at least 1 row" |> List.len
+    cols = List.get ls 0 |> Util.msg_unwrap "should be at least 1 row" |> List.len
     data = List.join ls |> List.map |v| v - 48
     { data, rows, cols }
 

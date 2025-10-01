@@ -1,6 +1,6 @@
 module [solution_day_07]
 
-import Util exposing [Solution, unwrap]
+import Util exposing [Solution]
 import "../data/day_07.txt" as input_str : Str
 
 Op : { res : U64, vals : List U64 }
@@ -49,7 +49,7 @@ eval_1 = |res, vals|
         [_] -> Bool.false
         [v1, v2] -> v1 + v2 == res or v1 * v2 == res
         _ ->
-            val = List.last vals |> unwrap "List.last failed"
+            val = List.last vals |> Util.unwrap
             new_vals = List.drop_last vals 1
             is_mul = res % val == 0 and eval_1(res // val, new_vals)
             is_add = res >= val and eval_1(res - val, new_vals)
@@ -65,7 +65,7 @@ eval_2 = |res, vals|
         [] -> Bool.false
         [v1, v2] -> v1 + v2 == res or v1 * v2 == res or concat_u64 v1 v2 == res
         _ ->
-            val = List.last vals |> unwrap "List.last failed"
+            val = List.last vals |> Util.unwrap
             new_vals = List.drop_last vals 1
             is_mul = res % val == 0 and eval_2(res // val, new_vals)
             is_add = res >= val and eval_2(res - val, new_vals)
@@ -117,12 +117,12 @@ parse = |in_str|
     |> Str.split_on "\n"
     |> List.map |line|
         parts = Str.split_on line ": "
-        res = List.first parts |> unwrap "List.first failed" |> Str.to_u64 |> unwrap "Str.to_U64 failed"
-        rest = List.get parts 1 |> unwrap "List.get failed"
+        res = List.first parts |> Util.unwrap |> Str.to_u64 |> Util.unwrap
+        rest = List.get parts 1 |> Util.unwrap
         vals =
             rest
             |> Str.split_on " "
-            |> List.map |s| Str.to_u64 s |> unwrap "Str.to_u64 failed"
+            |> List.map |s| Str.to_u64 s |> Util.unwrap
         { res, vals }
 
 example_str : Str

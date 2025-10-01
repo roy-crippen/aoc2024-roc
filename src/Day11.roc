@@ -73,7 +73,7 @@ parse = |in_str|
     in_str
     |> Str.split_on " "
     |> List.map |s|
-        label = (Str.to_u64 s |> Util.unwrap "Num.to_u64 failed")
+        label = (Str.to_u64 s |> Util.msg_unwrap "Num.to_u64 failed")
         (label, 1)
     |> Dict.from_list
 

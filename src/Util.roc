@@ -4,6 +4,7 @@ module [
     window_by_2,
     unique,
     unwrap,
+    msg_unwrap,
     blue,
     green,
     orange,
@@ -46,8 +47,14 @@ expect window_by_2 [1, 2, 3, 4] == [(1, 2), (2, 3), (3, 4)]
 unique : List a -> List a where a implements Hash & Eq
 unique = |xs| xs |> Set.from_list |> Set.to_list
 
-unwrap : [Err *, Ok a], Str -> a
-unwrap = |result, message|
+unwrap : [Err *, Ok a] -> a
+unwrap = |result|
+    when result is
+        Ok(x) -> x
+        Err(_) -> crash("failed to unwrap value from Result")
+
+msg_unwrap : [Err *, Ok a], Str -> a
+msg_unwrap = |result, message|
     when result is
         Ok(x) -> x
         Err(_) -> crash(message)
@@ -112,7 +119,7 @@ rounded_str = |num, places|
             then
                 "${whole}.${fraction}0"
             else
-                frac = xs |> List.take_first places |> Str.from_utf8 |> Util.unwrap "error converting to string"
+                frac = xs |> List.take_first places |> Str.from_utf8 |> unwrap
                 "${whole}.${frac}"
 
         [whole] -> "${whole}.00"

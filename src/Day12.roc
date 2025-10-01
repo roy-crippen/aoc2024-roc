@@ -9,7 +9,7 @@ parse = |s|
 
     ls = Str.split_on s "\n" |> List.map Str.to_utf8
     rows = List.len ls
-    cols = List.get ls 0 |> Util.unwrap "should be at least 1 row" |> List.len
+    cols = List.get ls 0 |> Util.msg_unwrap "should be at least 1 row" |> List.len
     data = List.join ls
     g = { data, rows, cols }
 
