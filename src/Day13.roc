@@ -8,7 +8,7 @@ XY : (I64, I64) # type for solution (x, y)
 
 parse_values : Str, Str -> (I64, I64)
 parse_values = |s, ch|
-    when List.map (Str.split_on s ",") |s1| Str.split_on s1 ch is
+    when Str.split_on s "," |> List.map |s1| Str.split_on s1 ch is
         [[_, t1], [_, t2]] -> (Str.to_i64 t1 |> Util.unwrap, Str.to_i64 t2 |> Util.unwrap)
         _ -> crash "invalid input"
 
@@ -27,10 +27,10 @@ parse_abv = |xs|
 
 parse : Str -> List (ABV, ABV)
 parse = |s|
-    xs1 = Str.split_on s "\n"
-    xs2 = List.keep_if xs1 |s1| !(Str.is_empty s1)
-    xs3 = List.chunks_of xs2 3 |> List.map |xs| parse_abv xs
-    xs3
+    Str.split_on s "\n"
+    |> List.drop_if Str.is_empty
+    |> List.chunks_of 3
+    |> List.map parse_abv
 
 solve_equation : (ABV, ABV), I64 -> [Err [NoSolution], Ok XY]
 solve_equation = |((a1, b1, v1_), (a2, b2, v2_)), offset|
