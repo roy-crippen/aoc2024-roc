@@ -16,6 +16,7 @@ module [
     rounded_str,
     cartesian_product,
     group_by,
+    modulus,
 ]
 
 zip : List a, List b -> List (a, b)
@@ -162,3 +163,8 @@ expect
     got = group_by [('a', 1), ('b', 5), ('c', 7), ('a', 2), ('a', 3), ('b', 6), ('c', 8), ('c', 9)]
     expected = Ok [('a', [1, 2, 3]), ('b', [5, 6]), ('c', [7, 8, 9])]
     got == expected
+
+modulus : Int a, Int a -> Int a
+modulus = |a, b|
+    remainder = Num.rem a b
+    if remainder < 0 then remainder + Num.abs b else remainder

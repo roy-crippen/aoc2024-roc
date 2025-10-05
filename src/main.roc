@@ -20,6 +20,7 @@ import Day10 exposing [solution_day_10]
 import Day11 exposing [solution_day_11]
 import Day12 exposing [solution_day_12]
 import Day13 exposing [solution_day_13]
+import Day14 exposing [solution_day_14]
 
 main! = |_args|
     sols
@@ -45,6 +46,7 @@ sols = [
     solution_day_11,
     solution_day_12,
     solution_day_13,
+    solution_day_14,
 ]
 
 run_solution! : Solution => Str
