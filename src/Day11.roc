@@ -42,8 +42,8 @@ part2 = |in_str|
     |> List.sum
     |> Ok
 
-expect part2 example_str |> dbg == Ok 65601038650482
-expect part2 input_str |> dbg == Ok expected_part2
+expect part2 example_str == Ok 65601038650482
+expect part2 input_str == Ok expected_part2
 
 blink : StoneCounts, U8 -> StoneCounts
 blink = |stone_counts, iters|

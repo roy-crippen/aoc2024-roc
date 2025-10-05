@@ -42,11 +42,7 @@ part2 = |in_str|
     |> Ok
 
 expect part2 example_str == Ok 4
-expect
-    got = part2 input_str
-    dbg got
-    dbg expected_part2
-    got == Ok expected_part2
+expect part2 input_str == Ok expected_part2
 
 parse : Str -> Result (List (List I16)) [InvalidNumStr]
 parse = |in_str|
@@ -109,7 +105,7 @@ expect is_safe_part_2 [1, 2, 3, 4, 5, 5]
 
 expect
     expected = Ok 6
-    got = parse example_str |> dbg |> Result.map_ok |xs| xs |> List.len
+    got = parse example_str |> Result.map_ok |xs| xs |> List.len
     expected == got
 
 example_str : Str
