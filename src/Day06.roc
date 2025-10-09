@@ -1,6 +1,5 @@
 module [solution_day_06]
 
-import pf.Utc
 import Util exposing [Solution]
 import Grid exposing [Grid, Dir, Pos]
 import Bool exposing [not]
@@ -143,23 +142,19 @@ part2 = |in_str|
     get_key : I32, Pos -> U64
     get_key = |cols, (r, c)| (r * cols + c) |> Num.to_u64
 
-    time_start1 = Utc.now!({})
     (g, st) = parse in_str
     i32_cols = Num.to_i32 g.cols
     route = traverse_grid_part1 g st [(st.pos, st.dir)] |> Util.remove_consecutive_duplicates
     rs = List.map route |(pos, dir)| (get_key i32_cols pos, (pos, dir))
     cross_overs = Util.group_by rs |> Util.unwrap |> List.keep_if (|(_k, vs)| List.len vs != 1) |> Dict.from_list
-    time_end1 = Utc.now!({})
-    duration1 = (Num.to_frac Utc.delta_as_nanos(time_end1, time_start1)) / 1000000.0
-    dbg duration1
-
-    time_start2 = Utc.now!({})
     init_pos_dir = List.first route |> Util.unwrap
     init_pos_used = List.repeat Bool.false (g.rows * g.cols)
+
     # Initialize bit vector: ceiling(67600 / 64) = 1057 U64s
     total_states = g.rows * g.cols * 4
     num_buckets = (total_states + 63) // 64
     init_visited = List.repeat 0u64 num_buckets
+
     (_, used_positions) = List.walk route (init_pos_dir, init_pos_used) |((prev_pos, prev_dir), used), (next_pos, next_direction)|
         key = get_key i32_cols next_pos
         state = if Dict.contains cross_overs key then st else { st & pos: prev_pos, dir: prev_dir }
@@ -168,11 +163,7 @@ part2 = |in_str|
             ((next_pos, next_direction), List.set used key Bool.true)
         else
             ((next_pos, next_direction), used)
-    result = used_positions |> List.keep_if (|b| b) |> List.len |> Ok
-    time_end2 = Utc.now!({})
-    duration2 = (Num.to_frac Utc.delta_as_nanos(time_end2, time_start2)) / 1000000.0
-    dbg duration2
-    result
+    used_positions |> List.keep_if (|b| b) |> List.len |> Ok
 
 example_str : Str
 example_str =
