@@ -21,11 +21,12 @@ g_ : Grid U8
 g_ = make 3 3 '.'
 g = set g_ (1, 1) '^'
 
-expect !(show_char g |> dbg |> Str.is_empty)
-expect is_inside   g (0, 0)
-expect is_inside   g (2, 2)
-expect is_inside   g (0, 2)
-expect is_inside   g (2, 0)
+expect !(show_char g |> Str.is_empty)
+expect is_inside g (0, 0)
+expect is_inside g (2, 2)
+expect is_inside g (0, 2)
+expect is_inside g (2, 0)
+expect !(is_inside g (-1, 2))
 expect !(is_inside g (3, 0))
 expect !(is_inside g (0, 3))
 expect !(is_inside g (3, 3))

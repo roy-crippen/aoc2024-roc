@@ -7,6 +7,7 @@ module [
     show_char,
     is_inside,
     get,
+    get_unsafe,
     set,
     find_positions,
     move,
@@ -80,6 +81,9 @@ get = |g, pos|
         (List.get g.data (pos_to_idx pos g.cols))? |> Ok
     else
         Err OutOfBounds
+
+get_unsafe : Grid a, Pos -> a
+get_unsafe = |g, pos| List.get g.data (pos_to_idx pos g.cols) |> Util.unwrap
 
 # return a new grid after setting the value in the grid at (r, c)
 set : Grid a, Pos, a -> Grid a where a implements Inspect
