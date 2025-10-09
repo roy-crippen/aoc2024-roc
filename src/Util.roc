@@ -3,6 +3,7 @@ module [
     unzip,
     window_by_2,
     unique,
+    remove_consecutive_duplicates,
     unwrap,
     msg_unwrap,
     blue,
@@ -48,11 +49,22 @@ expect window_by_2 [1, 2, 3, 4] == [(1, 2), (2, 3), (3, 4)]
 unique : List a -> List a where a implements Hash & Eq
 unique = |xs| xs |> Set.from_list |> Set.to_list
 
+remove_consecutive_duplicates : List a -> List a where a implements Eq
+remove_consecutive_duplicates = |xs|
+    when xs is
+        [] -> []
+        [first, ..] ->
+            List.walk xs [first] |acc, elem|
+                if List.last acc == Ok elem then
+                    acc
+                else
+                    List.append acc elem
+
 unwrap : [Err *, Ok a] -> a
 unwrap = |result|
     when result is
         Ok(x) -> x
-        Err(_) -> crash("failed to unwrap value from Result")
+        Err(_) -> crash "failed to unwrap value from Result"
 
 msg_unwrap : [Err *, Ok a], Str -> a
 msg_unwrap = |result, message|
