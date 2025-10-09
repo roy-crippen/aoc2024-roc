@@ -65,15 +65,38 @@ dir_to_i32 = |dir|
         W -> 3
         _ -> crash "invalid direction"
 
-pos_dir_to_index : I32, Pos, Dir -> U64
-pos_dir_to_index = |cols, (r, c), dir| (r * cols + c) * 4 + dir_to_i32 dir |> Num.to_u64
+# helper function for bit vector operations
+get_bit : List U64, U64 -> Bool
+get_bit = |visits, key|
+    bucket = key // 64
+    bit = key % 64
+    val = List.get visits bucket |> Result.with_default 0u64
+    shifted = Num.shift_right_by val (Num.to_u8 bit)
+    masked = Num.bitwise_and shifted 1u64
+    Bool.is_not_eq masked 0u64
 
-is_loop : Grid U8, State, List Bool -> Bool
-is_loop = |g, st, visited|
-    go : List Bool, State, Status -> Bool
-    go = |visits, state, status|
-        key = pos_dir_to_index cols state.pos state.dir
-        is_visited = List.get visits key |> Util.unwrap
+# helper function for bit vector operations
+set_bit : List U64, U64 -> List U64
+set_bit = |visits, key|
+    bucket = key // 64
+    bit = key % 64
+    val = List.get visits bucket |> Result.with_default 0u64
+    bit_mask = Num.shift_left_by 1u64 (Num.to_u8 bit)
+    new_val = Num.bitwise_or val bit_mask
+    List.set visits bucket new_val
+
+# create an index from a Pos and Dir
+pos_dir_to_index : I32, Pos, Dir -> U64
+pos_dir_to_index = |cols, (r, c), dir|
+    ((r * cols + c) * 4 + dir_to_i32 dir) |> Num.to_u64
+
+# traverse grid from state return true if path loops
+is_loop : Grid U8, State, List U64 -> Bool
+is_loop = |g, st, visits|
+    go : List U64, State, Status -> Bool
+    go = |visits1, state, status|
+        key = pos_dir_to_index (Num.to_i32 g.cols) state.pos state.dir
+        is_visited = get_bit visits1 key
         if is_visited then
             Bool.true
         else
@@ -81,16 +104,14 @@ is_loop = |g, st, visited|
                 OutOfBounds -> Bool.false
                 Guard ->
                     new_state = { state & dir: next_dir state.dir }
-                    go visits new_state Running
+                    go visits1 new_state Running
 
                 Running ->
                     (next_state, next_status) = to_next g state
-                    next_visits = if next_status == Running then List.set visits key Bool.true else visits
+                    next_visits = if next_status == Running then set_bit visits1 key else visits1
                     go next_visits next_state next_status
-
-    cols = Num.to_i32 g.cols
     (init_st, init_status) = to_next g st
-    go visited init_st init_status
+    go visits init_st init_status
 
 solution_day_06 : Solution
 solution_day_06 = {
@@ -126,10 +147,8 @@ part2 = |in_str|
     (g, st) = parse in_str
     i32_cols = Num.to_i32 g.cols
     route = traverse_grid_part1 g st [(st.pos, st.dir)] |> Util.remove_consecutive_duplicates
-    dbg (List.len route)
     rs = List.map route |(pos, dir)| (get_key i32_cols pos, (pos, dir))
     cross_overs = Util.group_by rs |> Util.unwrap |> List.keep_if (|(_k, vs)| List.len vs != 1) |> Dict.from_list
-    dbg (Dict.len cross_overs)
     time_end1 = Utc.now!({})
     duration1 = (Num.to_frac Utc.delta_as_nanos(time_end1, time_start1)) / 1000000.0
     dbg duration1
@@ -137,8 +156,10 @@ part2 = |in_str|
     time_start2 = Utc.now!({})
     init_pos_dir = List.first route |> Util.unwrap
     init_pos_used = List.repeat Bool.false (g.rows * g.cols)
-    init_visited = List.repeat Bool.false (g.rows * g.cols * 4) # 4 directions
-
+    # Initialize bit vector: ceiling(67600 / 64) = 1057 U64s
+    total_states = g.rows * g.cols * 4
+    num_buckets = (total_states + 63) // 64
+    init_visited = List.repeat 0u64 num_buckets
     (_, used_positions) = List.walk route (init_pos_dir, init_pos_used) |((prev_pos, prev_dir), used), (next_pos, next_direction)|
         key = get_key i32_cols next_pos
         state = if Dict.contains cross_overs key then st else { st & pos: prev_pos, dir: prev_dir }
