@@ -5,7 +5,7 @@ import Grid exposing [Grid, Dir, Pos]
 import Bool exposing [not]
 import "../data/day_06.txt" as input_str : Str
 
-State : { pos : Pos, dir : Dir, rows : U64, cols : U64 }
+State : { pos : Pos, dir : Dir }
 Status : [Guard, OutOfBounds, Running]
 
 parse : Str -> (Grid U8, State)
@@ -16,7 +16,7 @@ parse = |s|
     data = List.join ls
     g = { data, rows, cols }
     pos = Grid.find_positions g (|ch| ch == '^') |> List.first |> Util.unwrap
-    st = { pos, dir: N, rows, cols }
+    st = { pos, dir: N }
     (g, st)
 
 next_dir : Dir -> Dir
@@ -28,20 +28,18 @@ next_dir = |dir|
         W -> N
         _ -> crash "invalid direction"
 
-traverse_grid_part1 : Grid U8, State, List (Pos, Dir) -> List (Pos, Dir)
+traverse_grid_part1 : Grid U8, State, List State -> List State
 traverse_grid_part1 = |g, st, xs|
-    go : State, List (Pos, Dir), Status -> List (Pos, Dir)
+    go : State, List State, Status -> List State
     go = |state, ps, status|
         when status is
             OutOfBounds -> ps
             Running ->
                 (new_state, new_status) = to_next g state
-                ps1 = List.append ps (new_state.pos, new_state.dir)
+                ps1 = List.append ps new_state
                 go new_state ps1 new_status
 
-            Guard ->
-                new_state = { state & dir: next_dir state.dir }
-                traverse_grid_part1 g new_state ps
+            Guard -> traverse_grid_part1(g, { state & dir: next_dir state.dir }, ps)
     go st xs Running
 
 to_next : Grid U8, State -> (State, Status)
@@ -90,11 +88,11 @@ pos_dir_to_index = |cols, (r, c), dir|
     ((r * cols + c) * 4 + dir_to_i32 dir) |> Num.to_u64
 
 # traverse grid from state return true if path loops
-is_loop : Grid U8, State, List U64 -> Bool
-is_loop = |g, st, visits|
+is_loop : Grid U8, State, I32, List U64 -> Bool
+is_loop = |g, st, i32_cols, visits|
     go : List U64, State, Status -> Bool
     go = |visits1, state, status|
-        key = pos_dir_to_index (Num.to_i32 g.cols) state.pos state.dir
+        key = pos_dir_to_index i32_cols state.pos state.dir
         is_visited = get_bit visits1 key
         if is_visited then
             Bool.true
@@ -109,6 +107,7 @@ is_loop = |g, st, visits|
                     (next_state, next_status) = to_next g state
                     next_visits = if next_status == Running then set_bit visits1 key else visits1
                     go next_visits next_state next_status
+
     (init_st, init_status) = to_next g st
     go visits init_st init_status
 
@@ -131,39 +130,37 @@ expected_part2 = 2162
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     (g, st) = parse in_str
-    traverse_grid_part1 g st [(st.pos, st.dir)]
-    |> List.map (|(p, _d)| p)
+    traverse_grid_part1 g st [st]
+    |> List.map (|state| state.pos)
     |> Set.from_list
     |> Set.len
     |> Ok
 
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
-    get_key : I32, Pos -> U64
-    get_key = |cols, (r, c)| (r * cols + c) |> Num.to_u64
-
     (g, st) = parse in_str
     i32_cols = Num.to_i32 g.cols
-    route = traverse_grid_part1 g st [(st.pos, st.dir)] |> Util.remove_consecutive_duplicates
-    rs = List.map route |(pos, dir)| (get_key i32_cols pos, (pos, dir))
-    cross_overs = Util.group_by rs |> Util.unwrap |> List.keep_if (|(_k, vs)| List.len vs != 1) |> Dict.from_list
-    init_pos_dir = List.first route |> Util.unwrap
-    init_pos_used = List.repeat Bool.false (g.rows * g.cols)
+    route =
+        traverse_grid_part1 g st [st]
+        |> List.map |st_| (Num.to_u64 (st_.pos.0 * i32_cols + st_.pos.1), st_.pos, st_.dir)
+
+    init_idx_pos_dir = List.first route |> Util.unwrap
+    init_is_cycle = Set.with_capacity (List.len route)
+    init_pos_used = Set.with_capacity (List.len route)
 
     # Initialize bit vector: ceiling(67600 / 64) = 1057 U64s
     total_states = g.rows * g.cols * 4
     num_buckets = (total_states + 63) // 64
     init_visited = List.repeat 0u64 num_buckets
 
-    (_, used_positions) = List.walk route (init_pos_dir, init_pos_used) |((prev_pos, prev_dir), used), (next_pos, next_direction)|
-        key = get_key i32_cols next_pos
-        state = if Dict.contains cross_overs key then st else { st & pos: prev_pos, dir: prev_dir }
+    (_, cycle_positions, _) = List.walk route (init_idx_pos_dir, init_is_cycle, init_pos_used) |(idx_pos_dir, is_cycle, pos_used), (next_idx, next_pos, next_direction)|
+        (_prev_idx, prev_pos, prev_dir) = idx_pos_dir
+        state = { st & pos: prev_pos, dir: prev_dir }
         grid = Grid.set g next_pos '#'
-        if is_loop grid state init_visited then
-            ((next_pos, next_direction), List.set used key Bool.true)
-        else
-            ((next_pos, next_direction), used)
-    used_positions |> List.keep_if (|b| b) |> List.len |> Ok
+        has_pos_been_used = Set.contains pos_used next_idx
+        updated_is_cycle = if not has_pos_been_used and is_loop(grid, state, i32_cols, init_visited) then Set.insert is_cycle next_idx else is_cycle
+        ((next_idx, next_pos, next_direction), updated_is_cycle, Set.insert pos_used next_idx)
+    Ok (Set.len cycle_positions)
 
 example_str : Str
 example_str =

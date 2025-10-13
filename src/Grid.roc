@@ -6,6 +6,8 @@ module [
     show,
     show_char,
     is_inside,
+    pos_to_idx,
+    idx_to_pos,
     get,
     get_unsafe,
     set,
@@ -71,6 +73,7 @@ idx_to_pos = |idx, rows, cols|
     r = idx // rows |> Num.to_i32
     c = idx % cols |> Num.to_i32
     (r, c)
+    
 
 # returns the value in the grid at (r, c)
 get : Grid a, Pos -> [Err [OutOfBounds], Ok a]
