@@ -33,13 +33,13 @@ traverse_grid_part1 = |g, st, xs|
     go : State, List State, Status -> List State
     go = |state, ps, status|
         when status is
+            Guard -> traverse_grid_part1(g, { state & dir: next_dir state.dir }, ps)
             OutOfBounds -> ps
             Running ->
                 (new_state, new_status) = to_next g state
                 ps1 = List.append ps new_state
                 go new_state ps1 new_status
 
-            Guard -> traverse_grid_part1(g, { state & dir: next_dir state.dir }, ps)
     go st xs Running
 
 to_next : Grid U8, State -> (State, Status)
@@ -96,8 +96,8 @@ is_loop = |g, st, i32_cols, visits|
             Bool.true
         else
             when status is
-                OutOfBounds -> Bool.false
                 Guard -> go(visits1, { state & dir: next_dir state.dir }, Running)
+                OutOfBounds -> Bool.false
                 Running ->
                     (next_state, next_status) = to_next g state
                     next_visits = if next_status == Running then set_bit visits1 key else visits1
