@@ -84,8 +84,7 @@ set_bit = |visits, key|
 
 # create an index from a Pos and Dir
 pos_dir_to_index : I32, Pos, Dir -> U64
-pos_dir_to_index = |cols, (r, c), dir|
-    ((r * cols + c) * 4 + dir_to_i32 dir) |> Num.to_u64
+pos_dir_to_index = |cols, (r, c), dir| ((r * cols + c) * 4 + dir_to_i32 dir) |> Num.to_u64
 
 # traverse grid from state return true if path loops
 is_loop : Grid U8, State, I32, List U64 -> Bool
@@ -93,16 +92,12 @@ is_loop = |g, st, i32_cols, visits|
     go : List U64, State, Status -> Bool
     go = |visits1, state, status|
         key = pos_dir_to_index i32_cols state.pos state.dir
-        is_visited = get_bit visits1 key
-        if is_visited then
+        if get_bit visits1 key then
             Bool.true
         else
             when status is
                 OutOfBounds -> Bool.false
-                Guard ->
-                    new_state = { state & dir: next_dir state.dir }
-                    go visits1 new_state Running
-
+                Guard -> go(visits1, { state & dir: next_dir state.dir }, Running)
                 Running ->
                     (next_state, next_status) = to_next g state
                     next_visits = if next_status == Running then set_bit visits1 key else visits1
@@ -160,6 +155,7 @@ part2 = |in_str|
         has_pos_been_used = Set.contains pos_used next_idx
         updated_is_cycle = if not has_pos_been_used and is_loop(grid, state, i32_cols, init_visited) then Set.insert is_cycle next_idx else is_cycle
         ((next_idx, next_pos, next_direction), updated_is_cycle, Set.insert pos_used next_idx)
+
     Ok (Set.len cycle_positions)
 
 example_str : Str
