@@ -59,6 +59,8 @@ expect '.' == get_unsafe g 0
 expect '^' == get_unsafe g 4
 
 expect [4] == find_positions g (|v| v == '^')
+expect [4] == find_positions g (|v| v == '^')
+
 expect [0, 1, 2, 3, 5, 6, 7, 8] == find_positions g (|v| v == '.')
 
 expect move g N 4 == Ok 1
