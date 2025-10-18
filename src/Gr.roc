@@ -92,14 +92,14 @@ find_positions = |g, f|
     List.walk_with_index g.data [] |acc, v, idx| if f v then List.append acc idx else acc
 
 pos_row : Grid a, Pos -> U64
-pos_row = |g, pos| pos // g.rows
+pos_row = |g, pos| pos // g.cols
 
 pos_col : Grid a, Pos -> U64
 pos_col = |g, pos| pos % g.cols
 
 pos_to_rc : Grid a, U64 -> RC
 pos_to_rc = |g, pos|
-    r = pos // g.rows
+    r = pos // g.cols
     c = pos % g.cols
     (r, c)
 
