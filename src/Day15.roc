@@ -4,7 +4,7 @@ import Util exposing [Solution]
 import Gr exposing [Grid, Pos, Dir]
 import "../data/day_15.txt" as input_str : Str
 
-Element : [Robot, Wall, Box, StartBox, EndBox, Empty]
+Element : [Robot, Wall, Box, BoxS, BoxE, Empty]
 
 ch_to_element : U8 -> Element
 ch_to_element = |ch|
@@ -12,8 +12,8 @@ ch_to_element = |ch|
         '@' -> Robot
         '#' -> Wall
         'O' -> Box
-        '[' -> StartBox
-        ']' -> EndBox
+        '[' -> BoxS
+        ']' -> BoxE
         '.' -> Empty
         _ -> crash "invalid element character"
 
@@ -30,7 +30,6 @@ parse : Str -> (Grid Element, List Dir)
 parse = |s|
     when Str.split_on s "\n\n" is
         [gr_str, movement_str] ->
-            # grid
             ls = gr_str |> Str.split_on "\n" |> List.map Str.to_utf8
             rows = List.len ls
             cols = List.first ls |> Util.unwrap |> List.len
@@ -49,12 +48,33 @@ build_block : Grid Element, Pos, Dir -> (Bool, Set Pos)
 build_block = |g, pos, dir|
     go : Set Pos, Pos -> (Bool, Set Pos)
     go = |pos_set, p|
-        # dbg (dir, p, pos_set, Gr.get_unsafe g p)
         when Gr.get_unsafe g p is
             Wall -> (Bool.false, pos_set)
             Empty -> (Bool.true, pos_set)
-            Box -> go(Set.insert pos_set p, Gr.move_unsafe g p dir)
-            Robot | StartBox | EndBox -> crash "found another robot"
+            BoxS if dir == N or dir == S ->
+                # move the left box
+                (left_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+                if left_box_moved then
+                    # move the right box
+                    pos_east = Gr.move_unsafe g p E
+                    go(Set.insert set0 pos_east, Gr.move_unsafe g pos_east dir)
+                else
+                    # move not possible
+                    (Bool.false, pos_set)
+
+            BoxE if dir == N or dir == S ->
+                # move the right box
+                (right_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+                if right_box_moved then
+                    # move the left box
+                    pos_west = Gr.move_unsafe g p W
+                    go(Set.insert set0 pos_west, Gr.move_unsafe g pos_west dir)
+                else
+                    # move not possible
+                    (Bool.false, pos_set)
+
+            Box | BoxS | BoxE -> go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+            Robot -> crash "found another robot"
 
     go Set.insert(Set.with_capacity 20, pos) pos
 
@@ -73,21 +93,14 @@ move_block = |g, ps, dir|
             W -> List.map ps (|p| (Gr.pos_col g p, p)) |> sort_pair_asc
             E -> List.map ps (|p| (Gr.pos_col g p, p)) |> sort_pair_desc
             _ -> crash "invalid direction"
-    # dbg (dir, ordered_ps)
-
-    new_grid = List.walk ordered_ps g |g_acc, (_, p)|
-        Gr.swap g_acc p (Gr.move_unsafe g p dir)
-
-    new_grid
+    List.walk ordered_ps g |g_acc, (_, p)| Gr.swap g_acc p (Gr.move_unsafe g p dir)
 
 move_robot : Grid Element, Pos, Dir -> (Grid Element, Pos)
 move_robot = |g, robot_pos, dir|
-    # dbg dir
     next_robot_pos = Gr.move_unsafe g robot_pos dir
-
     when Gr.get_unsafe g next_robot_pos is
         Wall -> (g, robot_pos)
-        Box | StartBox | EndBox ->
+        Box | BoxS | BoxE ->
             when build_block g next_robot_pos dir is
                 (b, move_set) if b ->
                     moves = Set.insert move_set robot_pos |> Set.to_list
@@ -97,26 +110,32 @@ move_robot = |g, robot_pos, dir|
                 _ ->
                     (g, robot_pos)
 
-        # (g, next_robot_pos)
         Empty -> (Gr.swap g robot_pos next_robot_pos, next_robot_pos)
         Robot -> crash "found another robot"
 
 apply_movements : (Grid Element, List Dir) -> Grid Element
 apply_movements = |(g, ms)|
     robot_pos = find_robot_pos g
-    (final_grid, _final_robot_pos) = List.walk ms (g, robot_pos) |(grid, pos), m|
-        (g_, p_) = move_robot grid pos m
-        # dbg m
-        # dbg (Gr.show g_ 6 |> Str.replace_each "Empty" "     ")
-        (g_, p_)
-
+    (final_grid, _final_robot_pos) = List.walk ms (g, robot_pos) |(grid, pos), m| move_robot grid pos m
     final_grid
 
 score_boxes : Grid Element -> U64
 score_boxes = |g|
-    ps = Gr.find_positions g |element| element == Box or element == StartBox
-    aaa = List.walk ps 0 |acc, pos| acc + 100 * (Gr.pos_row g pos) + (Gr.pos_col g pos)
-    aaa
+    Gr.find_positions g (|element| element == Box or element == BoxS)
+    |> List.walk 0 |acc, pos| acc + 100 * Gr.pos_row g pos + (Gr.pos_col g pos)
+
+expand_grid : Grid Element -> Grid Element
+expand_grid = |g|
+    data =
+        List.map g.data |el|
+            when el is
+                Wall -> [Wall, Wall]
+                Box -> [BoxS, BoxE]
+                Empty -> [Empty, Empty]
+                Robot -> [Robot, Empty]
+                _ -> crash "bad input grid to expand_grid"
+        |> List.join
+    { data, rows: g.rows, cols: g.cols * 2 }
 
 solution_day_15 : Solution
 solution_day_15 = {
@@ -137,16 +156,12 @@ expected_part2 = 1425169
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     (g, movements) = parse in_str
-
-    # dbg (Gr.show g 6 |> Str.replace_each "Empty" "     ")
-    g1 = apply_movements (g, movements)
-    # dbg (Gr.show g1 6 |> Str.replace_each "Empty" "     ")
-
-    sum = score_boxes g1
-    Ok sum
+    apply_movements (g, movements) |> score_boxes |> Ok
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str| Ok 42
+part2 = |in_str|
+    (g, movements) = parse in_str
+    apply_movements (expand_grid g, movements) |> score_boxes |> Ok
 
 example_str : Str
 example_str =
@@ -180,6 +195,6 @@ example_str =
 expect part1 example_str == Ok 10092
 expect sort_pair_asc [(3, 8), (2, 7), (4, 8), (1, 7)] == [(1, 7), (2, 7), (3, 8), (4, 8)]
 expect sort_pair_desc [(3, 8), (2, 7), (4, 8), (1, 7)] == [(4, 8), (3, 8), (2, 7), (1, 7)]
-expect part1 input_str |> dbg == Ok expected_part1
-# expect part2 example_str == Ok 42
-# expect part2 input_str == Ok expected_part2
+expect part1 input_str == Ok expected_part1
+expect part2 example_str == Ok 9021
+expect part2 input_str == Ok expected_part2
