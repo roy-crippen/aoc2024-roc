@@ -16,8 +16,8 @@ module [
     pos_col,
     pos_to_rc,
     rc_to_pos,
-    move,
-    move_unsafe,
+    move_pos,
+    move_pos_unsafe,
     neighbors4,
     # north,
     # north_west,
@@ -106,8 +106,8 @@ pos_to_rc = |g, pos|
 rc_to_pos : Grid a, RC -> U64
 rc_to_pos = |g, (r, c)| r * g.cols + c
 
-move : Grid a, Dir, Pos -> Result Pos [OutOfBounds]
-move = |g, dir, pos|
+move_pos : Grid a, Dir, Pos -> Result Pos [OutOfBounds]
+move_pos = |g, dir, pos|
     max_col = g.cols - 1
     max_row = g.rows - 1
     (r, c) = pos_to_rc g pos
@@ -121,8 +121,8 @@ move = |g, dir, pos|
         E -> if c < max_col then Ok (pos + 1) else Err OutOfBounds
         NE -> if r > 0 and c < max_col then Ok (pos - g.cols + 1) else Err OutOfBounds
 
-move_unsafe : Grid a, Pos, Dir -> Pos
-move_unsafe = |g, pos, dir|
+move_pos_unsafe : Grid a, Pos, Dir -> Pos
+move_pos_unsafe = |g, pos, dir|
     when dir is
         N -> pos - g.cols
         NW -> pos - g.cols - 1
@@ -133,26 +133,26 @@ move_unsafe = |g, pos, dir|
         E -> pos + 1
         NE -> pos - g.cols + 1
 
-# north = |pos| move pos N
-# north_west = |pos| move pos NW
-# west = |pos| move pos W
-# south_west = |pos| move pos SW
-# south = |pos| move pos S
-# south_east = |pos| move pos SE
-# east = |pos| move pos E
-# north_east = |pos| move pos NE
+# north = |pos| move_pos pos N
+# north_west = |pos| move_pos pos NW
+# west = |pos| move_pos pos W
+# south_west = |pos| move_pos pos SW
+# south = |pos| move_pos pos S
+# south_east = |pos| move_pos pos SE
+# east = |pos| move_pos pos E
+# north_east = |pos| move_pos pos NE
 
 neighbors4 : Grid a, Pos -> List (Result Pos [OutOfBounds])
 neighbors4 = |g, pos| [
-    move g N pos,
-    move g W pos,
-    move g S pos,
-    move g E pos,
+    move_pos g N pos,
+    move_pos g W pos,
+    move_pos g S pos,
+    move_pos g E pos,
 ]
 
 # neighbor_values4 : Grid a, Pos -> List (Pos, Result a [OutOfBounds])
 # neighbor_values4 = |g, pos|
-#     (n, w, s, e) = (move g N pos, move g W pos, move g S pos, move g E pos)
+#     (n, w, s, e) = (move_pos g N pos, move_pos g W pos, move_pos g S pos, move_pos g E pos)
 #     [
 #         (n, get g n),
 #         (w, get g w),

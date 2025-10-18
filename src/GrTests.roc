@@ -13,8 +13,8 @@ import Gr exposing [
     find_positions,
     rc_to_pos,
     pos_to_rc,
-    move,
-    move_unsafe,
+    move_pos,
+    move_pos_unsafe,
     neighbors4,
 ]
 
@@ -63,32 +63,32 @@ expect [4] == find_positions g (|v| v == '^')
 
 expect [0, 1, 2, 3, 5, 6, 7, 8] == find_positions g (|v| v == '.')
 
-expect move g N 4 == Ok 1
-expect move g NW 4 == Ok 0
-expect move g W 4 == Ok 3
-expect move g SW 4 == Ok 6
-expect move g S 4 == Ok 7
-expect move g SE 4 == Ok 8
-expect move g E 4 == Ok 5
-expect move g NE 4 == Ok 2
+expect move_pos g N 4 == Ok 1
+expect move_pos g NW 4 == Ok 0
+expect move_pos g W 4 == Ok 3
+expect move_pos g SW 4 == Ok 6
+expect move_pos g S 4 == Ok 7
+expect move_pos g SE 4 == Ok 8
+expect move_pos g E 4 == Ok 5
+expect move_pos g NE 4 == Ok 2
 
-expect move g N 1 == Err OutOfBounds
-expect move g NW 0 == Err OutOfBounds
-expect move g W 3 == Err OutOfBounds
-expect move g SW 6 == Err OutOfBounds
-expect move g S 7 == Err OutOfBounds
-expect move g SE 8 == Err OutOfBounds
-expect move g E 5 == Err OutOfBounds
-expect move g NE 2 == Err OutOfBounds
+expect move_pos g N 1 == Err OutOfBounds
+expect move_pos g NW 0 == Err OutOfBounds
+expect move_pos g W 3 == Err OutOfBounds
+expect move_pos g SW 6 == Err OutOfBounds
+expect move_pos g S 7 == Err OutOfBounds
+expect move_pos g SE 8 == Err OutOfBounds
+expect move_pos g E 5 == Err OutOfBounds
+expect move_pos g NE 2 == Err OutOfBounds
 
-expect move_unsafe g 4 N == 1
-expect move_unsafe g 4 NW == 0
-expect move_unsafe g 4 W == 3
-expect move_unsafe g 4 SW == 6
-expect move_unsafe g 4 S == 7
-expect move_unsafe g 4 SE == 8
-expect move_unsafe g 4 E == 5
-expect move_unsafe g 4 NE == 2
+expect move_pos_unsafe g 4 N == 1
+expect move_pos_unsafe g 4 NW == 0
+expect move_pos_unsafe g 4 W == 3
+expect move_pos_unsafe g 4 SW == 6
+expect move_pos_unsafe g 4 S == 7
+expect move_pos_unsafe g 4 SE == 8
+expect move_pos_unsafe g 4 E == 5
+expect move_pos_unsafe g 4 NE == 2
 
 expect neighbors4 g 4 == [Ok 1, Ok 3, Ok 7, Ok 5]
 

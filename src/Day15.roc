@@ -55,30 +55,30 @@ build_block = |g, pos, dir|
             Empty -> (Bool.true, pos_set)
             BoxStart if dir == N or dir == S ->
                 # move the left box
-                (left_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+                (left_box_moved, set0) = go(Set.insert pos_set p, Gr.move_pos_unsafe g p dir)
                 if left_box_moved then
                     # move the right box
-                    pos_east = Gr.move_unsafe g p E
-                    go(Set.insert set0 pos_east, Gr.move_unsafe g pos_east dir)
+                    pos_east = Gr.move_pos_unsafe g p E
+                    go(Set.insert set0 pos_east, Gr.move_pos_unsafe g pos_east dir)
                 else
                     # move not possible
                     (Bool.false, pos_set)
 
             BoxEnd if dir == N or dir == S ->
                 # move the right box
-                (right_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+                (right_box_moved, set0) = go(Set.insert pos_set p, Gr.move_pos_unsafe g p dir)
                 if right_box_moved then
                     # move the left box
-                    pos_west = Gr.move_unsafe g p W
-                    go(Set.insert set0 pos_west, Gr.move_unsafe g pos_west dir)
+                    pos_west = Gr.move_pos_unsafe g p W
+                    go(Set.insert set0 pos_west, Gr.move_pos_unsafe g pos_west dir)
                 else
                     # move not possible
                     (Bool.false, pos_set)
 
-            Box | BoxStart | BoxEnd -> go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+            Box | BoxStart | BoxEnd -> go(Set.insert pos_set p, Gr.move_pos_unsafe g p dir)
             Robot -> crash "found another robot"
 
-    go Set.insert(Set.with_capacity 20, pos) pos
+    go Set.insert(Set.with_capacity 4, pos) pos
 
 sort_pair_asc : List (U64, U64) -> List (U64, U64)
 sort_pair_asc = |pairs| List.sort_with pairs |(k1, _), (k2, _)| Num.compare k1 k2
@@ -95,11 +95,11 @@ move_block = |g, ps, dir|
             W -> List.map ps (|p| (Gr.pos_col g p, p)) |> sort_pair_asc
             E -> List.map ps (|p| (Gr.pos_col g p, p)) |> sort_pair_desc
             _ -> crash "invalid direction"
-    List.walk ordered_ps g |g_acc, (_, p)| Gr.swap g_acc p (Gr.move_unsafe g p dir)
+    List.walk ordered_ps g |g_acc, (_, p)| Gr.swap g_acc p (Gr.move_pos_unsafe g p dir)
 
 move_robot : Grid Element, Pos, Dir -> (Grid Element, Pos)
 move_robot = |g, robot_pos, dir|
-    next_robot_pos = Gr.move_unsafe g robot_pos dir
+    next_robot_pos = Gr.move_pos_unsafe g robot_pos dir
     when Gr.get_unsafe g next_robot_pos is
         Wall -> (g, robot_pos)
         Box | BoxStart | BoxEnd ->
