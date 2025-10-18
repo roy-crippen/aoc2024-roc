@@ -4,7 +4,9 @@ import Util exposing [Solution]
 import Gr exposing [Grid, Pos, Dir]
 import "../data/day_15.txt" as input_str : Str
 
-Element : [Robot, Wall, Box, BoxS, BoxE, Empty]
+# this solution is a port of https://github.com/voberle/adventofcode/blob/main/2024/day15/src/main.rs
+
+Element : [Robot, Wall, Box, BoxStart, BoxEnd, Empty]
 
 ch_to_element : U8 -> Element
 ch_to_element = |ch|
@@ -12,8 +14,8 @@ ch_to_element = |ch|
         '@' -> Robot
         '#' -> Wall
         'O' -> Box
-        '[' -> BoxS
-        ']' -> BoxE
+        '[' -> BoxStart
+        ']' -> BoxEnd
         '.' -> Empty
         _ -> crash "invalid element character"
 
@@ -51,7 +53,7 @@ build_block = |g, pos, dir|
         when Gr.get_unsafe g p is
             Wall -> (Bool.false, pos_set)
             Empty -> (Bool.true, pos_set)
-            BoxS if dir == N or dir == S ->
+            BoxStart if dir == N or dir == S ->
                 # move the left box
                 (left_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
                 if left_box_moved then
@@ -62,7 +64,7 @@ build_block = |g, pos, dir|
                     # move not possible
                     (Bool.false, pos_set)
 
-            BoxE if dir == N or dir == S ->
+            BoxEnd if dir == N or dir == S ->
                 # move the right box
                 (right_box_moved, set0) = go(Set.insert pos_set p, Gr.move_unsafe g p dir)
                 if right_box_moved then
@@ -73,7 +75,7 @@ build_block = |g, pos, dir|
                     # move not possible
                     (Bool.false, pos_set)
 
-            Box | BoxS | BoxE -> go(Set.insert pos_set p, Gr.move_unsafe g p dir)
+            Box | BoxStart | BoxEnd -> go(Set.insert pos_set p, Gr.move_unsafe g p dir)
             Robot -> crash "found another robot"
 
     go Set.insert(Set.with_capacity 20, pos) pos
@@ -100,7 +102,7 @@ move_robot = |g, robot_pos, dir|
     next_robot_pos = Gr.move_unsafe g robot_pos dir
     when Gr.get_unsafe g next_robot_pos is
         Wall -> (g, robot_pos)
-        Box | BoxS | BoxE ->
+        Box | BoxStart | BoxEnd ->
             when build_block g next_robot_pos dir is
                 (b, move_set) if b ->
                     moves = Set.insert move_set robot_pos |> Set.to_list
@@ -119,9 +121,9 @@ apply_movements = |(g, ms)|
     (final_grid, _final_robot_pos) = List.walk ms (g, robot_pos) |(grid, pos), m| move_robot grid pos m
     final_grid
 
-score_boxes : Grid Element -> U64
-score_boxes = |g|
-    Gr.find_positions g (|element| element == Box or element == BoxS)
+score_BoxEnds : Grid Element -> U64
+score_BoxEnds = |g|
+    Gr.find_positions g (|element| element == Box or element == BoxStart)
     |> List.walk 0 |acc, pos| acc + 100 * Gr.pos_row g pos + (Gr.pos_col g pos)
 
 expand_grid : Grid Element -> Grid Element
@@ -130,7 +132,7 @@ expand_grid = |g|
         List.map g.data |el|
             when el is
                 Wall -> [Wall, Wall]
-                Box -> [BoxS, BoxE]
+                Box -> [BoxStart, BoxEnd]
                 Empty -> [Empty, Empty]
                 Robot -> [Robot, Empty]
                 _ -> crash "bad input grid to expand_grid"
@@ -156,12 +158,12 @@ expected_part2 = 1425169
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     (g, movements) = parse in_str
-    apply_movements (g, movements) |> score_boxes |> Ok
+    apply_movements (g, movements) |> score_BoxEnds |> Ok
 
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
     (g, movements) = parse in_str
-    apply_movements (expand_grid g, movements) |> score_boxes |> Ok
+    apply_movements (expand_grid g, movements) |> score_BoxEnds |> Ok
 
 example_str : Str
 example_str =
