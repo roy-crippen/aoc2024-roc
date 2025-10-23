@@ -3,6 +3,8 @@ module [solution_day_16]
 import Util exposing [Solution]
 import "../data/day_16.txt" as input_str : Str
 
+import Structures.Dijkstra as Dk
+
 solution_day_16 : Solution
 solution_day_16 = {
     day: 16,
