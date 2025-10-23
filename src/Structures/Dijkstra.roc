@@ -2,7 +2,7 @@ module [dijkstra]
 
 import Structures.PriorityQueue as Pq
 
-Distances a : Dict a I32 where a implements Inspect & Eq & Hash
+Distances a : Dict a U64 where a implements Inspect & Eq & Hash
 Predecessors a : Dict a a where a implements Inspect & Eq & Hash
 AllPredecessors a : Dict a (List a) where a implements Inspect & Eq & Hash
 
@@ -21,7 +21,7 @@ ShortestPaths a : { distances : Distances a, predecessors : Predecessors a } whe
 # that result in the same shortest distance.
 AllShortestPaths a : { distances : Distances a, predecessors : AllPredecessors a }
 
-compare : (a, I32), (a, I32) -> [LT, EQ, GT] where a implements Inspect & Eq & Hash
+compare : (a, U64), (a, U64) -> [LT, EQ, GT] where a implements Inspect & Eq & Hash
 compare = |p1, p2| Num.compare p1.1 p2.1
 
 # Run Dijkstra's algorithm to determine the shortest path to every node reachable from
@@ -32,15 +32,15 @@ dijkstra = |edges_from, start|
     q = Pq.from_list [(start, 0)] compare
     do_dijkstra edges_from dist (Dict.empty {}) q
 
-do_dijkstra : SuccessorsFunc a, Distances a, Predecessors a, Pq.Queue (a, I32) -> ShortestPaths a
+do_dijkstra : SuccessorsFunc a, Distances a, Predecessors a, Pq.Queue (a, U64) -> ShortestPaths a
 do_dijkstra = |edges_from, dist, pred, q|
     if Pq.is_empty q then
         { distances: dist, predecessors: pred }
     else
-        ((u, _), q0) = Pq.pop q |> unwrap
+        ((u, _), q0) = Pq.pop q |> unwrap # change function return type to to Result
         (walk_dist, walk_pred, walk_q) = Dict.walk edges_from(u) (dist, pred, q0) |acc, v, uv_dist|
             (acc_dist, acc_pred, acc_q) = acc
-            u_dist = Dict.get(acc_dist, u) |> unwrap
+            u_dist = Dict.get(acc_dist, u) |> unwrap # change function return type to to Result
             alt = u_dist + uv_dist
             when Dict.get(acc_dist, v) is
                 Ok v_dist if alt >= v_dist -> (acc_dist, acc_pred, acc_q)
@@ -48,34 +48,28 @@ do_dijkstra = |edges_from, dist, pred, q|
 
         do_dijkstra(edges_from, walk_dist, walk_pred, walk_q)
 
-# /// Return true if Dijkstra's algorithm found a path to the `dest` node.
-# ///
-# /// Recall that in order to determine the shortest path, Dijkstra's algorithm visits all
-# /// nodes reachable from the given start node. Thus we can exploit that to determine whether
-# /// any particular node is reachable, without looking at the graph again.
-# ///
-# pub fn has_path_to(paths: ShortestPaths(node_id), dest: node_id)
-# {
-#   dict.has_key(paths.distances, dest)
-# }
+# Return true if Dijkstra's algorithm found a path to the `dest` node.
+#
+# Recall that in order to determine the shortest path, Dijkstra's algorithm visits all
+# nodes reachable from the given start node. Thus we can exploit that to determine whether
+# any particular node is reachable, without looking at the graph again.
+has_path_to : ShortestPaths a, a -> Bool
+has_path_to = |paths, dest| Dict.contains paths.distances dest
 
-# /// When applied to the result of [`dijkstra`](#dijkstra), returns the shortest path to the
-# /// `dest` node as a list of successive nodes, and the total length of that path.
-# ///
-# pub fn shortest_path(paths: ShortestPaths(node_id), dest: node_id) -> #(List(node_id), Int)
-# {
-#   let path = do_shortest_path(paths.predecessors, dest)
-#   let assert Ok(dist) = dict.get(paths.distances, dest)
-#   #(list.reverse(path), dist)
-# }
+# When applied to the result of `dijkstra`, returns the shortest path to the
+# `dest` node as a list of successive nodes, and the total length of that path.
+shortest_path : ShortestPaths a, a -> (List a, U64)
+shortest_path = |paths, dest|
+    path = do_shortest_path(paths.predecessors, dest)
+    dist = Dict.get(paths.distances, dest) |> unwrap # change function return type to to Result
+    (List.reverse(path), dist)
 
-# fn do_shortest_path(predecessors, curr) -> List(node_id)
-# {
-#   case dict.get(predecessors, curr) {
-#     Error(_) -> [curr]
-#     Ok(pred) -> [curr, ..do_shortest_path(predecessors, pred)]
-#   }
-# }
+# change function return type to to Result
+do_shortest_path : Predecessors a, a -> List a where a implements Inspect & Eq & Hash
+do_shortest_path = |predecessors, curr|
+    when Dict.get(predecessors, curr) is
+        Ok pred -> List.prepend(do_shortest_path(predecessors, pred), curr)
+        _ -> [curr]
 
 # /// Same as [`dijkstra`](#dijkstra), except each node predecessor is a `list` instead of a
 # /// single node. If there are multiple shortest paths, junction nodes will have more than one
@@ -147,8 +141,9 @@ unwrap = |result|
 
 # tests
 
-f_Succ0 : SuccessorsFunc U64
-f_Succ0 = |node_id|
+# from https://www.geeksforgeeks.org/dsa/dijkstras-algorithm-for-adjacency-list-representation-greedy-algo-8/
+test_f_Succ : SuccessorsFunc U64
+test_f_Succ = |node_id|
     when node_id is
         0 -> Dict.from_list([(1, 4), (7, 8)])
         1 -> Dict.from_list([(0, 4), (7, 11), (2, 8)])
@@ -160,9 +155,11 @@ f_Succ0 = |node_id|
         5 -> Dict.from_list([(6, 2), (2, 4), (3, 14), (4, 10)])
         4 -> Dict.from_list([(3, 9), (5, 10)])
         _ -> crash "bug"
+test_paths = dijkstra test_f_Succ 0
+# (test_path, test_distance) = shortest_path test_paths 8
+aaa = shortest_path test_paths 4
 
-expect
-    paths = dijkstra f_Succ0 0
-    ds = paths.distances
-    ds == [(0, 0),(1, 4),(2, 12),(3, 19),(4, 21),(5, 11),(6, 9),(7, 8),(8, 14)] |> Dict.from_list
-
+expect test_paths.distances == [(0, 0), (1, 4), (2, 12), (3, 19), (4, 21), (5, 11), (6, 9), (7, 8), (8, 14)] |> Dict.from_list
+expect has_path_to test_paths 4
+expect aaa.1 |> dbg == 21
+expect aaa.0 |> dbg == [0, 7, 6, 5, 4]
