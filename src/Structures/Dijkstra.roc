@@ -140,8 +140,9 @@ unwrap = |result|
         Err(_) -> crash "failed to unwrap value from Result"
 
 # tests
+# test graph definition from:
+#   https://www.geeksforgeeks.org/dsa/dijkstras-algorithm-for-adjacency-list-representation-greedy-algo-8/
 
-# from https://www.geeksforgeeks.org/dsa/dijkstras-algorithm-for-adjacency-list-representation-greedy-algo-8/
 test_f_Succ : SuccessorsFunc U64
 test_f_Succ = |node_id|
     when node_id is
@@ -156,10 +157,9 @@ test_f_Succ = |node_id|
         4 -> Dict.from_list([(3, 9), (5, 10)])
         _ -> crash "bug"
 test_paths = dijkstra test_f_Succ 0
-# (test_path, test_distance) = shortest_path test_paths 8
-aaa = shortest_path test_paths 4
+test_shortest_path_pair = shortest_path test_paths 4
 
 expect test_paths.distances == [(0, 0), (1, 4), (2, 12), (3, 19), (4, 21), (5, 11), (6, 9), (7, 8), (8, 14)] |> Dict.from_list
 expect has_path_to test_paths 4
-expect aaa.1 |> dbg == 21
-expect aaa.0 |> dbg == [0, 7, 6, 5, 4]
+expect test_shortest_path_pair.1 |> dbg == 21
+expect test_shortest_path_pair.0 |> dbg == [0, 7, 6, 5, 4]
