@@ -19,6 +19,7 @@ module [
     move_pos,
     move_pos_unsafe,
     neighbors4,
+    neighbors4_unsafe,
     # north,
     # north_west,
     # west,
@@ -150,6 +151,14 @@ neighbors4 = |g, pos| [
     move_pos g E pos,
 ]
 
+neighbors4_unsafe : Grid a, Pos -> List Pos
+neighbors4_unsafe = |g, pos| [
+    move_pos_unsafe g pos N,
+    move_pos_unsafe g pos W,
+    move_pos_unsafe g pos S,
+    move_pos_unsafe g pos E,
+]
+
 # neighbor_values4 : Grid a, Pos -> List (Pos, Result a [OutOfBounds])
 # neighbor_values4 = |g, pos|
 #     (n, w, s, e) = (move_pos g N pos, move_pos g W pos, move_pos g S pos, move_pos g E pos)
@@ -207,3 +216,133 @@ neighbors4 = |g, pos| [
 
 # tests
 
+g_ : Grid U8
+g_ = make 3 3 '.'
+g_test = set g_ 4 '^'
+
+expect rc_to_pos g_test (1, 1) == 4
+expect rc_to_pos g_test (2, 2) == 8
+expect rc_to_pos g_test (0, 2) == 2
+expect rc_to_pos g_test (2, 0) == 6
+
+expect pos_to_rc g_test 4 == (1, 1)
+expect pos_to_rc g_test 8 == (2, 2)
+expect pos_to_rc g_test 2 == (0, 2)
+expect pos_to_rc g_test 6 == (2, 0)
+
+expect
+    s = show_char g_test |> Str.trim
+    should_be =
+        """
+        . . .
+        . ^ .
+        . . .
+        """
+    s == should_be
+
+expect is_inside g_test 0
+expect is_inside g_test 8
+expect is_inside g_test 2
+expect is_inside g_test 6
+expect !(is_inside g_test 9)
+
+expect Ok '.' == get g_test 0
+expect Err OutOfBounds == get g_test 15
+expect Ok '^' == get g_test 4
+
+expect '.' == get_unsafe g_test 0
+expect '^' == get_unsafe g_test 4
+
+expect [4] == find_positions g_test (|v| v == '^')
+expect [4] == find_positions g_test (|v| v == '^')
+
+expect [0, 1, 2, 3, 5, 6, 7, 8] == find_positions g_test (|v| v == '.')
+
+expect move_pos g_test N 4 == Ok 1
+expect move_pos g_test NW 4 == Ok 0
+expect move_pos g_test W 4 == Ok 3
+expect move_pos g_test SW 4 == Ok 6
+expect move_pos g_test S 4 == Ok 7
+expect move_pos g_test SE 4 == Ok 8
+expect move_pos g_test E 4 == Ok 5
+expect move_pos g_test NE 4 == Ok 2
+
+expect move_pos g_test N 1 == Err OutOfBounds
+expect move_pos g_test NW 0 == Err OutOfBounds
+expect move_pos g_test W 3 == Err OutOfBounds
+expect move_pos g_test SW 6 == Err OutOfBounds
+expect move_pos g_test S 7 == Err OutOfBounds
+expect move_pos g_test SE 8 == Err OutOfBounds
+expect move_pos g_test E 5 == Err OutOfBounds
+expect move_pos g_test NE 2 == Err OutOfBounds
+
+expect move_pos_unsafe g_test 4 N == 1
+expect move_pos_unsafe g_test 4 NW == 0
+expect move_pos_unsafe g_test 4 W == 3
+expect move_pos_unsafe g_test 4 SW == 6
+expect move_pos_unsafe g_test 4 S == 7
+expect move_pos_unsafe g_test 4 SE == 8
+expect move_pos_unsafe g_test 4 E == 5
+expect move_pos_unsafe g_test 4 NE == 2
+
+expect neighbors4 g_test 4 == [Ok 1, Ok 3, Ok 7, Ok 5]
+
+# expect
+#     expected = [true, true, true, true, true, true, true, true]
+#     got = apply8  g_test (1, 1) is_inside
+#     expected == got
+
+# expect
+#     expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
+#     got = apply8  g_test (1, 1) get
+#     expected == got
+
+# expect
+#     expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
+#     got = apply8  g_test (0, 1) get
+#     expected == got
+
+# expect
+#     expected = [true, true, true, true]
+#     got = apply4  g_test (1, 1) is_inside
+#     expected == got
+
+# expect
+#     expected = [Ok '.', Ok '.', Ok '.', Ok '.']
+#     got = apply4  g_test (1, 1) get
+#     expected == got
+
+# expect
+#     expected = [true, true, true, true, true, true, true, true]
+#     got = apply8  g_test (1, 1) is_inside
+#     expected == got
+
+# expect
+#     expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
+#     got = apply8  g_test (1, 1) get
+#     expected == got
+
+# expect
+#     expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
+#     got = apply8  g_test (0, 1) get
+#     expected == got
+
+# expect
+#     expected = [true, true, true, true]
+#     got = apply4  g_test (1, 1) is_inside
+#     expected == got
+
+# expect
+#     expected = [Ok '.', Ok '.', Ok '.', Ok '.']
+#     got = apply4  g_test (1, 1) get
+#     expected == got
+
+# expect
+#     expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
+#     got = apply4  g_test (0, 1) get
+#     expected == got
+
+# expect
+#     expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
+#     got = apply4  g_test (0, 1) get
+#     expected == got

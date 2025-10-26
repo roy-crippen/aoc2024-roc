@@ -1,7 +1,7 @@
 module [solution_day_15]
 
 import Util exposing [Solution]
-import Gr exposing [Grid, Pos, Dir]
+import Structures.Grid as Gr
 import "../data/day_15.txt" as input_str : Str
 
 # this solution is a port of https://github.com/voberle/adventofcode/blob/main/2024/day15/src/main.rs
@@ -19,7 +19,7 @@ ch_to_element = |ch|
         '.' -> Empty
         _ -> crash "invalid element character"
 
-ch_to_dir : U8 -> Dir
+ch_to_dir : U8 -> Gr.Dir
 ch_to_dir = |ch|
     when ch is
         '^' -> N
@@ -28,7 +28,7 @@ ch_to_dir = |ch|
         '>' -> E
         _ -> crash "invalid direction character"
 
-parse : Str -> (Grid Element, List Dir)
+parse : Str -> (Gr.Grid Element, List Gr.Dir)
 parse = |s|
     when Str.split_on s "\n\n" is
         [gr_str, movement_str] ->
@@ -43,12 +43,12 @@ parse = |s|
 
         _ -> crash "bad input data for day 15"
 
-find_robot_pos : Grid Element -> U64
+find_robot_pos : Gr.Grid Element -> U64
 find_robot_pos = |g| g.data |> List.find_first_index (|e| e == Robot) |> Util.unwrap
 
-build_block : Grid Element, Pos, Dir -> (Bool, Set Pos)
+build_block : Gr.Grid Element, Gr.Pos, Gr.Dir -> (Bool, Set Gr.Pos)
 build_block = |g, pos, dir|
-    go : Set Pos, Pos -> (Bool, Set Pos)
+    go : Set Gr.Pos, Gr.Pos -> (Bool, Set Gr.Pos)
     go = |pos_set, p|
         when Gr.get_unsafe g p is
             Wall -> (Bool.false, pos_set)
@@ -86,7 +86,7 @@ sort_pair_asc = |pairs| List.sort_with pairs |(k1, _), (k2, _)| Num.compare k1 k
 sort_pair_desc : List (U64, U64) -> List (U64, U64)
 sort_pair_desc = |pairs| List.sort_with pairs |(k1, _), (k2, _)| Num.compare k2 k1
 
-move_block : Grid Element, List Pos, Dir -> Grid Element
+move_block : Gr.Grid Element, List Gr.Pos, Gr.Dir -> Gr.Grid Element
 move_block = |g, ps, dir|
     ordered_ps =
         when dir is
@@ -97,7 +97,7 @@ move_block = |g, ps, dir|
             _ -> crash "invalid direction"
     List.walk ordered_ps g |g_acc, (_, p)| Gr.swap g_acc p (Gr.move_pos_unsafe g p dir)
 
-move_robot : Grid Element, Pos, Dir -> (Grid Element, Pos)
+move_robot : Gr.Grid Element, Gr.Pos, Gr.Dir -> (Gr.Grid Element, Gr.Pos)
 move_robot = |g, robot_pos, dir|
     next_robot_pos = Gr.move_pos_unsafe g robot_pos dir
     when Gr.get_unsafe g next_robot_pos is
@@ -115,18 +115,18 @@ move_robot = |g, robot_pos, dir|
         Empty -> (Gr.swap g robot_pos next_robot_pos, next_robot_pos)
         Robot -> crash "found another robot"
 
-apply_movements : (Grid Element, List Dir) -> Grid Element
+apply_movements : (Gr.Grid Element, List Gr.Dir) -> Gr.Grid Element
 apply_movements = |(g, ms)|
     robot_pos = find_robot_pos g
     (final_grid, _final_robot_pos) = List.walk ms (g, robot_pos) |(grid, pos), m| move_robot grid pos m
     final_grid
 
-score_BoxEnds : Grid Element -> U64
+score_BoxEnds : Gr.Grid Element -> U64
 score_BoxEnds = |g|
     Gr.find_positions g (|element| element == Box or element == BoxStart)
     |> List.walk 0 |acc, pos| acc + 100 * Gr.pos_row g pos + (Gr.pos_col g pos)
 
-expand_grid : Grid Element -> Grid Element
+expand_grid : Gr.Grid Element -> Gr.Grid Element
 expand_grid = |g|
     data =
         List.map g.data |el|
@@ -135,7 +135,7 @@ expand_grid = |g|
                 Box -> [BoxStart, BoxEnd]
                 Empty -> [Empty, Empty]
                 Robot -> [Robot, Empty]
-                _ -> crash "bad input grid to expand_grid"
+                _ -> crash "bad input Gr.Grid to expand_grid"
         |> List.join
     { data, rows: g.rows, cols: g.cols * 2 }
 
