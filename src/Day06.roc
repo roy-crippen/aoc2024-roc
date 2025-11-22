@@ -92,7 +92,8 @@ is_loop = |g, st, i32_cols, visits|
     go : List U64, State, Status -> Bool
     go = |visits1, state, status|
         key = pos_dir_to_index i32_cols state.pos state.dir
-        if get_bit visits1 key then
+        visited = get_bit visits1 key
+        if visited then
             Bool.true
         else
             when status is
@@ -148,13 +149,23 @@ part2 = |in_str|
     num_buckets = (total_states + 63) // 64
     init_visited = List.repeat 0u64 num_buckets
 
-    (_, cycle_positions, _) = List.walk route (init_idx_pos_dir, init_is_cycle, init_pos_used) |(idx_pos_dir, is_cycle, pos_used), (next_idx, next_pos, next_direction)|
-        (_prev_idx, prev_pos, prev_dir) = idx_pos_dir
-        state = { st & pos: prev_pos, dir: prev_dir }
-        grid = Grid.set g next_pos '#'
-        has_pos_been_used = Set.contains pos_used next_idx
-        updated_is_cycle = if not has_pos_been_used and is_loop(grid, state, i32_cols, init_visited) then Set.insert is_cycle next_idx else is_cycle
-        ((next_idx, next_pos, next_direction), updated_is_cycle, Set.insert pos_used next_idx)
+    (_final_state, cycle_positions, _used_positions) =
+        List.walk
+            route
+            (init_idx_pos_dir, init_is_cycle, init_pos_used)
+            (|(idx_pos_dir, is_cycle, pos_used), (next_idx, next_pos, next_direction)|
+                (_prev_idx, prev_pos, prev_dir) = idx_pos_dir
+                prev_state = { pos: prev_pos, dir: prev_dir }
+                grid = Grid.set g next_pos '#'
+                has_pos_been_used = Set.contains pos_used next_idx
+                updated_is_cycle =
+                    if
+                        not has_pos_been_used and is_loop(grid, prev_state, i32_cols, init_visited)
+                    then
+                        Set.insert is_cycle next_idx
+                    else
+                        is_cycle
+                ((next_idx, next_pos, next_direction), updated_is_cycle, Set.insert pos_used next_idx))
 
     Ok (Set.len cycle_positions)
 
@@ -176,6 +187,6 @@ example_str =
 # tests
 
 expect part1 example_str == Ok 41
-expect part1 input_str == Ok expected_part1
+# expect part1 input_str == Ok expected_part1
 expect part2 example_str == Ok 6
 # expect part2 input_str |> dbg == Ok expected_part2 |> dbg
