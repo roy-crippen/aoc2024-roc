@@ -26,7 +26,6 @@ run = |g|
             ((r, c, d), temp_q) = Dq.pop_back(st_in.q) |> Util.unwrap
             st = { st_in & q: temp_q }
 
-            ls : List (I32, I32)
             ls =
                 [(r + 1, c), (r, c + 1), (r - 1, c), (r, c - 1)]
                 |> List.keep_if(|(row, col)| row > -1 and col > -1 and row < rows and col < cols)
@@ -88,7 +87,7 @@ expected_part1 : U64
 expected_part1 = 276
 
 expected_part2 : U64
-expected_part2 = 2220 # c,r = 60,37, val = 60*37 =
+expected_part2 = 2220 # c,r = 60,37, val = 60*37
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
@@ -101,13 +100,10 @@ part1 = |in_str|
     rows = 71
     cols = 71
 
-    temp_g : Gr.Grid U8
-    temp_g = Gr.make(rows, cols, 0)
+    g = Gr.make(rows, cols, 0)
     rcs = parse(in_str) |> List.take_first(take_n)
-    new_data = List.walk rcs temp_g.data |acc, (r, c)| List.set(acc, r * cols + c, 1)
-    g = { temp_g & data: new_data }
-
-    (_row, _col, dist, _completed) = run(g)
+    data = List.walk rcs g.data |acc, (r, c)| List.set(acc, r * cols + c, 1)
+    (_row, _col, dist, _completed) = run({ g & data })
     Ok dist
 
 part2 : Str -> [Err Str, Ok U64]
@@ -121,7 +117,6 @@ part2 = |in_str|
     rows = 71
     cols = 71
 
-    g : Gr.Grid U8
     g = Gr.make(rows, cols, 0)
     rcs = parse(in_str)
     rc = find_block(g, cols, rcs, safe_n - 1)
