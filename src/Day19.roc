@@ -4,6 +4,8 @@ import Util exposing [Solution]
 import "../data/day_19.txt" as input_str : Str
 import Bool exposing [true, false]
 
+# port of https://github.com/hyperneutrino/advent-of-code/blob/main/2024/day19p1.py
+
 solution_day_19 : Solution
 solution_day_19 = {
     day: 19,
@@ -39,23 +41,41 @@ can_obtain = |design, patterns, max_pat_len|
 
     go(design)
 
+num_possibilities : List U8, Set (List U8), U64 -> U64
+num_possibilities = |design, patterns, max_pat_len|
+    go : List U8, Dict (List U8) U64 -> (Dict (List U8) U64, U64)
+    go = |ds, cache|
+        when Dict.get(cache, ds) is
+            Ok val -> (cache, val)
+            _ ->
+                vs = List.range({ start: At 0, end: At Num.min(List.len(ds), max_pat_len) })
+                (new_cache, count) = List.walk vs (cache, 0) |(acc_cache, acc_cnt), i|
+                    split = List.split_at(ds, i)
+                    if Set.contains(patterns, split.before) then
+                        (acc_cache1, acc_cnt1) = go(split.others, acc_cache)
+                        (acc_cache1, acc_cnt1 + acc_cnt)
+                    else
+                        (acc_cache, acc_cnt)
+                (Dict.insert(new_cache, ds, count), count)
+
+    (_, cnt) = go(design, Dict.single([], 1))
+    cnt
+
 expected_part1 : U64
 expected_part1 = 242
 
 expected_part2 : U64
-expected_part2 = 42
+expected_part2 = 595975512785325
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     (designs, patterns, max_pat_len) = parse(in_str)
-    count =
-        designs
-        |> List.keep_if(|design| can_obtain(design, patterns, max_pat_len))
-        |> List.len
-    Ok count
+    Ok (designs |> List.keep_if(|design| can_obtain(design, patterns, max_pat_len)) |> List.len)
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str| Ok 42
+part2 = |in_str|
+    (designs, patterns, max_pat_len) = parse(in_str)
+    Ok (designs |> List.walk(0, |acc, design| acc + num_possibilities(design, patterns, max_pat_len)))
 
 example_str : Str
 example_str =
@@ -75,12 +95,5 @@ example_str =
 # tests
 
 expect part1 example_str == Ok 6
-expect part1 input_str == Ok expected_part1
-# expect part2 example_str == Ok 42
-# expect part2 input_str == Ok expected_part2
-expect
-    (designs, patterns, max_pat_len) = parse(example_str)
-    design = designs |> List.first |> Util.unwrap
-    found = can_obtain(design, patterns, max_pat_len)
-    found == true
-
+# expect part1 input_str |> dbg == Ok expected_part1
+expect part2 example_str == Ok 16
