@@ -4,15 +4,15 @@ import Util exposing [Solution]
 import "../data/day_16.txt" as input_str : Str
 
 import Structures.Dijkstra as Dk
-import Structures.Grid as Gr
+import Structures.Grid as Gr exposing [Grid, Dir, Pos]
 
-Node : (U64, Gr.Dir)
+Node : (Pos, Dir)
 
-build_successors_dict : Gr.Grid U8 -> Dk.Successors Node
+build_successors_dict : Grid U8 -> Dk.Successors Node
 build_successors_dict = |g|
-    find_edges : U64 -> List (Node, Dk.Distances Node)
-    find_edges = |idx|
-        ns_idx = Gr.neighbors4_unsafe g idx # [N,W,S,E] [0,1,2,3]
+    find_edges : Pos -> List (Node, Dk.Distances Node)
+    find_edges = |idx| # cahnge name to p from idx
+        ns_idx = Gr.neighbors4 idx # [N,W,S,E] [0,1,2,3]
         when ns_idx is
             [n_idx, w_idx, s_idx, e_idx] ->
                 has_n_idx = Set.contains idx_set n_idx
@@ -52,33 +52,33 @@ build_successors_dict = |g|
 
             _ -> crash "invalid number of elements from Gr.neighbors4"
 
-    indexes = Gr.find_positions(g, |ch| ch != '#')
-    idx_set = indexes |> Set.from_list
-    indexes |> List.map (|index| find_edges(index)) |> List.join |> Dict.from_list
+    positions = Gr.find_positions(g, |ch| ch != '#')
+    idx_set = positions |> Set.from_list
+    positions |> List.map (|p| find_edges(p)) |> List.join |> Dict.from_list
 
-parse : Str -> (Gr.Grid U8, U64, U64)
+parse : Str -> (Grid U8, Pos, Pos)
 parse = |s|
     ls = s |> Str.split_on "\n" |> List.map Str.to_utf8
     rows = List.len ls
     cols = List.first ls |> Util.unwrap |> List.len
     data = List.join ls
     g = { data, rows, cols }
-    start_node = List.find_first_index(data, |ch| ch == 'S') |> Util.unwrap
-    end_node = List.find_first_index(data, |ch| ch == 'E') |> Util.unwrap
+    start_node = List.find_first_index(data, |ch| ch == 'S') |> Util.unwrap |> Gr.idx_to_pos(rows, cols)
+    end_node = List.find_first_index(data, |ch| ch == 'E') |> Util.unwrap |> Gr.idx_to_pos(rows, cols)
     (g, start_node, end_node)
 
-find_shortest_dist : Dk.Distances Node, U64 -> U64
-find_shortest_dist = |dist, idx|
-    [Dict.get dist (idx, N), Dict.get dist (idx, W), Dict.get dist (idx, S), Dict.get dist (idx, E)]
+find_shortest_dist : Dk.Distances Node, Pos -> U64
+find_shortest_dist = |dist, pos|
+    [Dict.get dist (pos, N), Dict.get dist (pos, W), Dict.get dist (pos, S), Dict.get dist (pos, E)]
     |> List.keep_oks |v| v
     |> List.min
     |> Result.with_default Num.max_u64
 
-find_node_count : Dk.AllShortestPaths Node, U64 -> U64
-find_node_count = |all_paths, idx|
-    min_dist = find_shortest_dist(all_paths.distances, idx)
+find_node_count : Dk.AllShortestPaths Node, Pos -> U64
+find_node_count = |all_paths, pos|
+    min_dist = find_shortest_dist(all_paths.distances, pos)
     Dict.to_list all_paths.distances
-    |> List.keep_if |((i, _dir), dist)| i == idx and dist == min_dist
+    |> List.keep_if |((p, _dir), dist)| p == pos and dist == min_dist
     |> List.map
         (|(node, _dist)|
             (shortest_paths, _dist) = Dk.shortest_paths(all_paths, node)
@@ -105,17 +105,17 @@ expected_part2 = 563
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
-    (g, start_idx, end_idx) = parse(in_str)
+    (g, start_pos, end_pos) = parse(in_str)
     successors = build_successors_dict(g)
-    paths = Dk.dijkstra(successors, (start_idx, E))
-    Ok find_shortest_dist(paths.distances, end_idx)
+    paths = Dk.dijkstra(successors, (start_pos, E))
+    Ok find_shortest_dist(paths.distances, end_pos)
 
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
-    (g, start_idx, end_idx) = parse(in_str)
+    (g, start_pos, end_pos) = parse(in_str)
     successors = build_successors_dict(g)
-    all_paths = Dk.dijkstra_all(successors, (start_idx, E))
-    Ok find_node_count(all_paths, end_idx)
+    all_paths = Dk.dijkstra_all(successors, (start_pos, E))
+    Ok find_node_count(all_paths, end_pos)
 
 example_str : Str
 example_str =

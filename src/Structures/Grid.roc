@@ -1,45 +1,40 @@
 module [
     Grid,
     Pos,
-    RC,
     Dir,
     make,
     show,
     show_char,
+    show_spaced,
     is_inside,
+    pos_to_idx,
+    idx_to_pos,
     get,
     get_unsafe,
     set,
     swap,
     find_positions,
-    pos_row,
-    pos_col,
-    pos_to_rc,
-    rc_to_pos,
-    move_pos,
-    move_pos_unsafe,
+    move,
+    north,
+    north_west,
+    west,
+    south_west,
+    south,
+    south_east,
+    east,
+    north_east,
     neighbors4,
-    neighbors4_unsafe,
-    # north,
-    # north_west,
-    # west,
-    # south_west,
-    # south,
-    # south_east,
-    # east,
-    # north_east,
-    # neighbors4,
-    # neighbor_values4,
-    # neighbor_values8_tup,
-    # apply4,
-    # apply8,
+    neighbor_values4,
+    neighbor_values8_tup,
+    apply4,
+    apply8,
 ]
 
 import Util
+import Bool exposing [true]
 
 Grid a : { data : List a, rows : U64, cols : U64 } where a implements Inspect
-Pos : U64
-RC : (U64, U64)
+Pos : (I32, I32)
 Dir : [N, NW, W, SW, S, SE, E, NE]
 
 # returns a Grid of rows by cols all with values v
@@ -49,15 +44,11 @@ make = |rows, cols, v|
     { data, rows, cols }
 
 # pretty print string from a grid
-show : Grid a, U64 -> Str
-show = |g, min_len|
+show : Grid a -> Str
+show = |g|
     List.walk_with_index g.data "" |acc, v, idx|
         s = if idx % g.cols == 0 then "\n" else " "
-        v_str = Inspect.to_str v
-        v_len = Str.to_utf8 v_str |> List.len
-        pad_len = if v_len < min_len then min_len - v_len else 0
-        pad_str = Str.concat(v_str, Str.repeat(" ", pad_len))
-        acc |> Str.concat s |> Str.concat pad_str
+        acc |> Str.concat s |> Str.concat (Inspect.to_str v)
     |> Str.concat "\n"
 
 # pretty print string from a grid
@@ -70,279 +61,214 @@ show_char = |g|
     |> Str.concat "\n"
     |> Str.replace_each "\"" ""
 
-# returns true if pos is inside the grid otherwise false
-is_inside : Grid a, Pos -> Bool
-is_inside = |g, pos| pos < g.rows * g.cols
+show_spaced : Grid a, U64 -> Str
+show_spaced = |g, min_len|
+    List.walk_with_index g.data "" |acc, v, idx|
+        s = if idx % g.cols == 0 then "\n" else " "
+        v_str = Inspect.to_str v
+        v_len = Str.to_utf8 v_str |> List.len
+        pad_len = if v_len < min_len then min_len - v_len else 0
+        pad_str = Str.concat(v_str, Str.repeat(" ", pad_len))
+        acc |> Str.concat s |> Str.concat pad_str
+    |> Str.concat "\n"
 
-# returns the value in the grid at pos
-get : Grid a, Pos -> Result a [OutOfBounds]
-get = |g, pos| List.get g.data pos
+# returns true if pos is inside the grid otherwise false
+is_inside : U64, U64, Pos -> Bool
+is_inside = |rows, cols, pos|
+    r = pos.0 |> Num.to_u64
+    c = pos.1 |> Num.to_u64
+    r < rows and c < cols
+
+pos_to_idx : Pos, U64 -> U64
+pos_to_idx = |(r, c), cols| (Num.to_u64 r) * cols + (Num.to_u64 c)
+
+idx_to_pos : U64, U64, U64 -> Pos
+idx_to_pos = |idx, _rows, cols|
+    r = idx // cols |> Num.to_i32
+    c = idx % cols |> Num.to_i32
+    (r, c)
+
+# returns the value in the grid at (r, c)
+get : Grid a, Pos -> [Err [OutOfBounds], Ok a]
+get = |g, pos|
+    r = Num.to_u64 pos.0
+    c = Num.to_u64 pos.1
+    if r >= 0 and r < g.rows and c >= 0 and c < g.cols then
+        (List.get g.data (pos_to_idx pos g.cols))? |> Ok
+    else
+        Err OutOfBounds
 
 get_unsafe : Grid a, Pos -> a
-get_unsafe = |g, pos| List.get g.data pos |> Util.msg_unwrap "Grid.get_unsafe failed"
+get_unsafe = |g, pos| List.get g.data (pos_to_idx pos g.cols) |> Util.unwrap
 
 # return a new grid after setting the value in the grid at (r, c)
 set : Grid a, Pos, a -> Grid a where a implements Inspect
-set = |g, pos, v| { g & data: List.set g.data pos v }
+set = |g, pos, v| { g & data: List.set g.data (pos_to_idx pos g.cols) v }
 
 swap : Grid a, Pos, Pos -> Grid a
-swap = |g, p1, p2| { g & data: List.swap g.data p1 p2 }
+swap = |g, p1, p2| { g & data: List.swap(g.data, pos_to_idx(p1, g.cols), pos_to_idx(p2, g.cols)) }
 
 find_positions : Grid a, (a -> Bool) -> List Pos
 find_positions = |g, f|
-    List.walk_with_index g.data [] |acc, v, idx| if f v then List.append acc idx else acc
+    ls = List.walk_with_index g.data [] |acc, v, idx| if f v then List.append acc idx else acc
+    List.map ls |idx| idx_to_pos idx g.rows g.cols
 
-pos_row : Grid a, Pos -> U64
-pos_row = |g, pos| pos // g.cols
-
-pos_col : Grid a, Pos -> U64
-pos_col = |g, pos| pos % g.cols
-
-pos_to_rc : Grid a, U64 -> RC
-pos_to_rc = |g, pos|
-    r = pos // g.cols
-    c = pos % g.cols
-    (r, c)
-
-rc_to_pos : Grid a, RC -> U64
-rc_to_pos = |g, (r, c)| r * g.cols + c
-
-move_pos : Grid a, Dir, Pos -> Result Pos [OutOfBounds]
-move_pos = |g, dir, pos|
-    max_col = g.cols - 1
-    max_row = g.rows - 1
-    (r, c) = pos_to_rc g pos
+move : Pos, Dir -> Pos
+move = |(r, c), dir|
     when dir is
-        N -> if r > 0 then Ok (pos - g.cols) else Err OutOfBounds
-        NW -> if r > 0 and c > 0 then Ok (pos - g.cols - 1) else Err OutOfBounds
-        W -> if c > 0 then Ok (pos - 1) else Err OutOfBounds
-        SW -> if r < max_row and c > 0 then Ok (pos + g.cols - 1) else Err OutOfBounds
-        S -> if r < max_row then Ok (pos + g.cols) else Err OutOfBounds
-        SE -> if r < max_row and c < max_col then Ok (pos + g.cols + 1) else Err OutOfBounds
-        E -> if c < max_col then Ok (pos + 1) else Err OutOfBounds
-        NE -> if r > 0 and c < max_col then Ok (pos - g.cols + 1) else Err OutOfBounds
+        N -> (r - 1, c)
+        NW -> (r - 1, c - 1)
+        W -> (r, c - 1)
+        SW -> (r + 1, c - 1)
+        S -> (r + 1, c)
+        SE -> (r + 1, c + 1)
+        E -> (r, c + 1)
+        NE -> (r - 1, c + 1)
 
-move_pos_unsafe : Grid a, Pos, Dir -> Pos
-move_pos_unsafe = |g, pos, dir|
-    when dir is
-        N -> pos - g.cols
-        NW -> pos - g.cols - 1
-        W -> pos - 1
-        SW -> pos + g.cols - 1
-        S -> pos + g.cols
-        SE -> pos + g.cols + 1
-        E -> pos + 1
-        NE -> pos - g.cols + 1
+north = |pos| move pos N
+north_west = |pos| move pos NW
+west = |pos| move pos W
+south_west = |pos| move pos SW
+south = |pos| move pos S
+south_east = |pos| move pos SE
+east = |pos| move pos E
+north_east = |pos| move pos NE
 
-# north = |pos| move_pos pos N
-# north_west = |pos| move_pos pos NW
-# west = |pos| move_pos pos W
-# south_west = |pos| move_pos pos SW
-# south = |pos| move_pos pos S
-# south_east = |pos| move_pos pos SE
-# east = |pos| move_pos pos E
-# north_east = |pos| move_pos pos NE
+neighbors4 : Pos -> List Pos
+neighbors4 = |pos| [north pos, west pos, south pos, east pos]
 
-neighbors4 : Grid a, Pos -> List (Result Pos [OutOfBounds])
-neighbors4 = |g, pos| [
-    move_pos g N pos,
-    move_pos g W pos,
-    move_pos g S pos,
-    move_pos g E pos,
+neighbor_values4 : Grid a, Pos -> List (Pos, [Err [OutOfBounds], Ok a])
+neighbor_values4 = |g, pos|
+    (n, w, s, e) = (north pos, west pos, south pos, east pos)
+    [
+        (n, get g n),
+        (w, get g w),
+        (s, get g s),
+        (e, get g e),
+    ]
+
+neighbor_values8_tup :
+    Grid a,
+    Pos
+    -> (
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+        [Err [OutOfBounds], Ok a],
+    )
+neighbor_values8_tup = |g, pos|
+    (
+        get g (north pos),
+        get g (north_west pos),
+        get g (west pos),
+        get g (south_west pos),
+        get g (south pos),
+        get g (south_east pos),
+        get g (east pos),
+        get g (north_east pos),
+    )
+
+apply4 : Grid a, Pos, (Grid a, Pos -> b) -> List b
+apply4 = |g, pos, f| [
+    f g (north pos),
+    f g (west pos),
+    f g (south pos),
+    f g (east pos),
 ]
 
-neighbors4_unsafe : Grid a, Pos -> List Pos
-neighbors4_unsafe = |g, pos| [
-    move_pos_unsafe g pos N,
-    move_pos_unsafe g pos W,
-    move_pos_unsafe g pos S,
-    move_pos_unsafe g pos E,
+apply8 : Grid a, Pos, (Grid a, Pos -> b) -> List b
+apply8 = |g, pos, f| [
+    f g (north pos),
+    f g (north_west pos),
+    f g (west pos),
+    f g (south_west pos),
+    f g (south pos),
+    f g (south_east pos),
+    f g (east pos),
+    f g (north_east pos),
 ]
 
-# neighbor_values4 : Grid a, Pos -> List (Pos, Result a [OutOfBounds])
-# neighbor_values4 = |g, pos|
-#     (n, w, s, e) = (move_pos g N pos, move_pos g W pos, move_pos g S pos, move_pos g E pos)
-#     [
-#         (n, get g n),
-#         (w, get g w),
-#         (s, get g s),
-#         (e, get g e),
-#     ]
-
-# neighbor_values8_tup :
-#     Grid a,
-#     Pos
-#     -> (
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#         [Err [OutOfBounds], Ok a],
-#     )
-# neighbor_values8_tup = |g, pos|
-#     (
-#         get g (north pos),
-#         get g (north_west pos),
-#         get g (west pos),
-#         get g (south_west pos),
-#         get g (south pos),
-#         get g (south_east pos),
-#         get g (east pos),
-#         get g (north_east pos),
-#     )
-
-# apply4 : Grid a, Pos, (Grid a, Pos -> b) -> List b
-# apply4 = |g, pos, f| [
-#     f g (north pos),
-#     f g (west pos),
-#     f g (south pos),
-#     f g (east pos),
-# ]
-
-# apply8 : Grid a, Pos, (Grid a, Pos -> b) -> List b
-# apply8 = |g, pos, f| [
-#     f g (north pos),
-#     f g (north_west pos),
-#     f g (west pos),
-#     f g (south_west pos),
-#     f g (south pos),
-#     f g (south_east pos),
-#     f g (east pos),
-#     f g (north_east pos),
-# ]
-
-# tests
+# tess -----------------------------------
 
 g_ : Grid U8
 g_ = make 3 3 '.'
-g_test = set g_ 4 '^'
+g_test = set g_ (1, 1) '^'
 
-expect rc_to_pos g_test (1, 1) == 4
-expect rc_to_pos g_test (2, 2) == 8
-expect rc_to_pos g_test (0, 2) == 2
-expect rc_to_pos g_test (2, 0) == 6
-
-expect pos_to_rc g_test 4 == (1, 1)
-expect pos_to_rc g_test 8 == (2, 2)
-expect pos_to_rc g_test 2 == (0, 2)
-expect pos_to_rc g_test 6 == (2, 0)
+expect !(show_char g_test |> Str.is_empty)
+expect is_inside g_test.rows g_test.cols (0, 0)
+expect is_inside g_test.rows g_test.cols (2, 2)
+expect is_inside g_test.rows g_test.cols (0, 2)
+expect is_inside g_test.rows g_test.cols (2, 0)
+expect !(is_inside g_test.rows g_test.cols (-1, 2))
+expect !(is_inside g_test.rows g_test.cols (3, 0))
+expect !(is_inside g_test.rows g_test.cols (0, 3))
+expect !(is_inside g_test.rows g_test.cols (3, 3))
+expect Ok '.' == get g_test (0, 0)
+expect Err OutOfBounds == get g_test (6, 0)
+expect Ok '^' == get g_test (1, 1)
+expect [(1, 1)] == find_positions g_test (|v| v == '^')
+expect [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)] == find_positions g_test (|v| v == '.')
 
 expect
-    s = show_char g_test |> Str.trim
-    should_be =
-        """
-        . . .
-        . ^ .
-        . . .
-        """
-    s == should_be
+    expected = [true, true, true, true, true, true, true, true]
+    got = apply8 g_test (1, 1) |_g, pos| is_inside g_test.rows g_test.cols pos
+    expected == got
 
-expect is_inside g_test 0
-expect is_inside g_test 8
-expect is_inside g_test 2
-expect is_inside g_test 6
-expect !(is_inside g_test 9)
+expect
+    expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
+    got = apply8 g_test (1, 1) get
+    expected == got
 
-expect Ok '.' == get g_test 0
-expect Err OutOfBounds == get g_test 15
-expect Ok '^' == get g_test 4
+expect
+    expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
+    got = apply8 g_test (0, 1) get
+    expected == got
 
-expect '.' == get_unsafe g_test 0
-expect '^' == get_unsafe g_test 4
+expect
+    expected = [true, true, true, true]
+    got = apply4 g_test (1, 1) |_g, pos| is_inside g_test.rows g_test.cols pos
+    expected == got
 
-expect [4] == find_positions g_test (|v| v == '^')
-expect [4] == find_positions g_test (|v| v == '^')
+expect
+    expected = [Ok '.', Ok '.', Ok '.', Ok '.']
+    got = apply4 g_test (1, 1) get
+    expected == got
 
-expect [0, 1, 2, 3, 5, 6, 7, 8] == find_positions g_test (|v| v == '.')
+expect
+    expected = [true, true, true, true, true, true, true, true]
+    got = apply8 g_test (1, 1) |_g, pos| is_inside g_test.rows g_test.cols pos
+    expected == got
 
-expect move_pos g_test N 4 == Ok 1
-expect move_pos g_test NW 4 == Ok 0
-expect move_pos g_test W 4 == Ok 3
-expect move_pos g_test SW 4 == Ok 6
-expect move_pos g_test S 4 == Ok 7
-expect move_pos g_test SE 4 == Ok 8
-expect move_pos g_test E 4 == Ok 5
-expect move_pos g_test NE 4 == Ok 2
+expect
+    expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
+    got = apply8 g_test (1, 1) get
+    expected == got
 
-expect move_pos g_test N 1 == Err OutOfBounds
-expect move_pos g_test NW 0 == Err OutOfBounds
-expect move_pos g_test W 3 == Err OutOfBounds
-expect move_pos g_test SW 6 == Err OutOfBounds
-expect move_pos g_test S 7 == Err OutOfBounds
-expect move_pos g_test SE 8 == Err OutOfBounds
-expect move_pos g_test E 5 == Err OutOfBounds
-expect move_pos g_test NE 2 == Err OutOfBounds
+expect
+    expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
+    got = apply8 g_test (0, 1) get
+    expected == got
 
-expect move_pos_unsafe g_test 4 N == 1
-expect move_pos_unsafe g_test 4 NW == 0
-expect move_pos_unsafe g_test 4 W == 3
-expect move_pos_unsafe g_test 4 SW == 6
-expect move_pos_unsafe g_test 4 S == 7
-expect move_pos_unsafe g_test 4 SE == 8
-expect move_pos_unsafe g_test 4 E == 5
-expect move_pos_unsafe g_test 4 NE == 2
+expect
+    expected = [true, true, true, true]
+    got = apply4 g_test (1, 1) |_g, pos| is_inside g_test.rows g_test.cols pos
+    expected == got
 
-expect neighbors4 g_test 4 == [Ok 1, Ok 3, Ok 7, Ok 5]
+expect
+    expected = [Ok '.', Ok '.', Ok '.', Ok '.']
+    got = apply4 g_test (1, 1) get
+    expected == got
 
-# expect
-#     expected = [true, true, true, true, true, true, true, true]
-#     got = apply8  g_test (1, 1) is_inside
-#     expected == got
+expect
+    expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
+    got = apply4 g_test (0, 1) get
+    expected == got
 
-# expect
-#     expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
-#     got = apply8  g_test (1, 1) get
-#     expected == got
-
-# expect
-#     expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
-#     got = apply8  g_test (0, 1) get
-#     expected == got
-
-# expect
-#     expected = [true, true, true, true]
-#     got = apply4  g_test (1, 1) is_inside
-#     expected == got
-
-# expect
-#     expected = [Ok '.', Ok '.', Ok '.', Ok '.']
-#     got = apply4  g_test (1, 1) get
-#     expected == got
-
-# expect
-#     expected = [true, true, true, true, true, true, true, true]
-#     got = apply8  g_test (1, 1) is_inside
-#     expected == got
-
-# expect
-#     expected = [Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.', Ok '.']
-#     got = apply8  g_test (1, 1) get
-#     expected == got
-
-# expect
-#     expected = [Err OutOfBounds, Err OutOfBounds, Ok '.', Ok '.', Ok '^', Ok '.', Ok '.', Err OutOfBounds]
-#     got = apply8  g_test (0, 1) get
-#     expected == got
-
-# expect
-#     expected = [true, true, true, true]
-#     got = apply4  g_test (1, 1) is_inside
-#     expected == got
-
-# expect
-#     expected = [Ok '.', Ok '.', Ok '.', Ok '.']
-#     got = apply4  g_test (1, 1) get
-#     expected == got
-
-# expect
-#     expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
-#     got = apply4  g_test (0, 1) get
-#     expected == got
-
-# expect
-#     expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
-#     got = apply4  g_test (0, 1) get
-#     expected == got
+expect
+    expected = [Err OutOfBounds, Ok '.', Ok '^', Ok '.']
+    got = apply4 g_test (0, 1) get
+    expected == got

@@ -1,7 +1,7 @@
 module [solution_day_12]
 
 import Util exposing [Solution]
-import Grid exposing [Grid, Pos]
+import Structures.Grid as Gr exposing [Grid, Pos]
 import "../data/day_12.txt" as input_str : Str
 
 parse : Str -> (Grid U8, List (Pos, U8))
@@ -36,9 +36,9 @@ distinct_areas = |g, positions|
                     dfs_loop rest visited area ch
                 else
                     neighbors =
-                        Grid.neighbors4 pos
+                        Gr.neighbors4 pos
                         |> List.keep_if |p|
-                            Grid.get g p == Ok ch and !(Dict.get visited p |> Result.with_default Bool.false)
+                            Gr.get g p == Ok ch and !(Dict.get visited p |> Result.with_default Bool.false)
                     new_visited = Dict.insert visited pos Bool.true
                     new_area = List.append area pos
                     dfs_loop (List.concat neighbors rest) new_visited new_area ch
@@ -61,8 +61,8 @@ perimeter : Grid U8, List Pos -> U64
 perimeter = |g, ps|
     like_neighbors : Pos -> List Pos
     like_neighbors = |pos|
-        ch = Grid.get g pos
-        Grid.neighbor_values4 g pos
+        ch = Gr.get g pos
+        Gr.neighbor_values4 g pos
         |> List.keep_if |(_neighbor_pos, neighbor_value)| neighbor_value == ch
         |> List.map |(neighbor_pos, _neighbor_value)| neighbor_pos
 
@@ -72,8 +72,8 @@ corner_counts : Grid U8, List Pos -> U64
 corner_counts = |g, ps|
     corner_count : Pos -> U64
     corner_count = |p|
-        (n, nw, w, sw, s, se, e, ne) = Grid.neighbor_values8_tup g p
-        ch = Grid.get g p
+        (n, nw, w, sw, s, se, e, ne) = Gr.neighbor_values8_tup g p
+        ch = Gr.get g p
         count =
             (if s == ch and se != ch and e == ch then 1 else 0)
             + (if s == ch and sw != ch and w == ch then 1 else 0)

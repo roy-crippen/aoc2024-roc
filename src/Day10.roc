@@ -1,6 +1,6 @@
 module [solution_day_10]
 
-import Grid exposing [Grid, Pos]
+import Structures.Grid as Gr exposing [Grid, Pos]
 import Util exposing [Solution]
 import "../data/day_10.txt" as input_str : Str
 
@@ -23,7 +23,7 @@ expected_part2 = 1344
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     g = parse in_str
-    Grid.find_positions g (|v| v == 0)
+    Gr.find_positions g (|v| v == 0)
     |> List.walk 0 |acc, pos| acc + (scores g pos |> Util.unique |> List.len)
     |> Ok
 
@@ -33,7 +33,7 @@ expect part1 input_str == Ok expected_part1
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
     g = parse in_str
-    Grid.find_positions g (|v| v == 0)
+    Gr.find_positions g (|v| v == 0)
     |> List.walk 0 |acc, pos| acc + (scores g pos |> List.len)
     |> Ok
 
@@ -42,7 +42,7 @@ expect part2 input_str == Ok expected_part2
 
 next_pos : Grid U8, Pos -> [Err [NotFound, OutOfBounds], Ok Pos]
 next_pos = |g, pos|
-    _v = (Grid.get g pos)?
+    _v = (Gr.get g pos)?
     Ok pos
 
 scores : Grid U8, Pos -> List Pos
@@ -50,16 +50,16 @@ scores = |g, pos| scores_loop g pos []
 
 scores_loop : Grid U8, Pos, List Pos -> List Pos
 scores_loop = |g, pos, rs|
-    pos_val = Grid.get g pos |> Util.msg_unwrap "Grid.get failed"
+    pos_val = Gr.get g pos |> Util.msg_unwrap "Gr.get failed"
     if pos_val == 9 then
         List.append rs pos
     else
-        Grid.apply4 g pos next_pos
+        Gr.apply4 g pos next_pos
         |> List.keep_if |res| Result.is_ok res
         |> List.map |res|
             when res is
                 Ok p ->
-                    new_v = Grid.get g p |> Util.msg_unwrap "Grid.get failed"
+                    new_v = Gr.get g p |> Util.msg_unwrap "Gr.get failed"
                     if new_v == pos_val + 1 then
                         scores g p
                     else

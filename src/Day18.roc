@@ -3,20 +3,20 @@ module [solution_day_18]
 import Bool exposing [false, true]
 import Util exposing [Solution]
 import "../data/day_18.txt" as input_str : Str
-import Structures.Grid as Gr
+import Structures.Grid as Gr exposing [Grid, Pos]
 import Structures.Deque as Dq
 
 State : { q : Dq.Deque (I32, I32, I32), seen : Set (I32, I32), done : Bool }
 
-parse : Str -> List Gr.RC
+parse : Str -> List Pos
 parse = |s|
     Str.split_on(s, "\n")
     |> List.map |str|
         when Str.split_on(str, ",") is
-            [s1, s2] -> (Str.to_u64(s2) |> Util.unwrap, Str.to_u64(s1) |> Util.unwrap)
+            [s1, s2] -> (Str.to_i32(s2) |> Util.unwrap, Str.to_i32(s1) |> Util.unwrap)
             _ -> crash("day18 parse failed")
 
-run : Gr.Grid U8 -> (I32, I32, U64, Bool)
+run : Grid U8 -> (I32, I32, U64, Bool)
 run = |g|
     go : State -> State
     go = |st_in|
@@ -33,7 +33,7 @@ run = |g|
             state = List.walk_until ls st |acc, (nr, nc)|
                 if Set.contains(acc.seen, (nr, nc)) then
                     Continue acc
-                else if Gr.get_unsafe(g, Gr.rc_to_pos(g, (Num.to_u64(nr), Num.to_u64(nc)))) == 1 then
+                else if Gr.get_unsafe(g, (nr, nc)) == 1 then
                     Continue acc
                 else if nr == rows - 1 and nc == cols - 1 then
                     Break { acc & q: Dq.push_front(acc.q, (nr, nc, d + 1)), done: true }
@@ -55,9 +55,9 @@ run = |g|
     else
         (0, 0, 0, false)
 
-find_block : Gr.Grid U8, U64, List Gr.RC, U64 -> Gr.RC
+find_block : Grid U8, U64, List Pos, U64 -> Pos
 find_block = |g, cols, rcs, floor_idx|
-    go : U64, U64 -> (Gr.RC, Bool)
+    go : U64, U64 -> (Pos, Bool)
     go = |start_idx, end_idx|
         if start_idx + 1 >= end_idx then
             rc_ = List.get(rcs, start_idx) |> Util.unwrap
@@ -65,11 +65,12 @@ find_block = |g, cols, rcs, floor_idx|
         else
             mid_idx = (start_idx + end_idx) // 2
             xs = List.take_first(rcs, mid_idx)
-            data = List.walk xs g.data |acc, (r, c)| List.set(acc, r * cols + c, 1)
+            data = List.walk xs g.data |acc, (r, c)| List.set(acc, (r * cols_i32 + c) |> Num.to_u64, 1)
             (_row, _col, _dist, completed) = run({ g & data })
 
             if completed then go(mid_idx, end_idx) else go(start_idx, mid_idx)
 
+    cols_i32 = cols |> Num.to_i32
     (rc, _completed) = go(floor_idx, List.len(rcs) - 1)
     rc
 
@@ -102,7 +103,9 @@ part1 = |in_str|
 
     g = Gr.make(rows, cols, 0)
     rcs = parse(in_str) |> List.take_first(take_n)
-    data = List.walk rcs g.data |acc, (r, c)| List.set(acc, r * cols + c, 1)
+    data = List.walk rcs g.data |acc, (r, c)|
+        i = (r * (cols |> Num.to_i32) + c) |> Num.to_u64
+        List.set(acc, i, 1)
     (_row, _col, dist, _completed) = run({ g & data })
     Ok dist
 
@@ -120,7 +123,8 @@ part2 = |in_str|
     g = Gr.make(rows, cols, 0)
     rcs = parse(in_str)
     rc = find_block(g, cols, rcs, safe_n - 1)
-    Ok (rc.0 * rc.1)
+    Ok (rc.0 * rc.1 |> Num.to_u64)
+# Ok 42
 
 # example_str : Str
 # example_str =
@@ -152,7 +156,7 @@ part2 = |in_str|
 #    2,0
 #    """
 
-# tests
+# # tests
 
 # expect part1 example_str |> dbg == Ok 22
 # expect part2 example_str |> dbg == Ok 6

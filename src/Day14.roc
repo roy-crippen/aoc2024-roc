@@ -149,7 +149,7 @@ expect
         [(4, -3), (3, -3), (3, 2), (0, -1), (0, 3), (0, -2), (6, -3), (0, -2), (3, 3), (3, 2), (4, -3), (5, -3)],
     )
 
-# import Grid exposing [Grid]
+# import Structures.Grid exposing [Grid]
 # view : Str, I64, I64, I64 -> Grid U8
 # view = |s, rows, cols, count|
 #     (xvs, yvs) = parse s

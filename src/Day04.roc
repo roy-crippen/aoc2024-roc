@@ -1,7 +1,7 @@
 module [solution_day_04]
 
 import Util
-import Grid exposing [Grid, Dir, Pos]
+import Structures.Grid as Gr exposing [Grid, Dir, Pos]
 import "../data/day_04.txt" as input_str : Str
 
 solution_day_04 : Util.Solution
@@ -23,7 +23,7 @@ expected_part2 = 1850
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     g = parse in_str
-    Grid.find_positions g |v| v == 'X'
+    Gr.find_positions g |v| v == 'X'
     |> List.walk 0 |acc, pos| (xmas_count g pos) + acc
     |> Ok
 
@@ -33,7 +33,7 @@ expect part1 input_str == Ok expected_part1
 part2 : Str -> [Err Str, Ok U64]
 part2 = |in_str|
     g = parse in_str
-    Grid.find_positions g |v| v == 'A'
+    Gr.find_positions g |v| v == 'A'
     |> List.keep_oks |pos| cross_xmas g pos
     |> List.sum
     |> Ok
@@ -44,13 +44,13 @@ expect part2 input_str == Ok expected_part2
 cross_xmas : Grid U8, Pos -> [Err [NotFound, OutOfBounds], Ok U64]
 cross_xmas = |g, pos|
     # nw and se
-    nw = (Grid.get g (Grid.north_west pos))?
-    se = (Grid.get g (Grid.south_east pos))?
+    nw = (Gr.get g (Gr.north_west pos))?
+    se = (Gr.get g (Gr.south_east pos))?
     nw_se_ok = (nw == 'M' and se == 'S') or (nw == 'S' and se == 'M')
 
     # ne and sw
-    ne = (Grid.get g (Grid.north_east pos))?
-    sw = (Grid.get g (Grid.south_west pos))?
+    ne = (Gr.get g (Gr.north_east pos))?
+    sw = (Gr.get g (Gr.south_west pos))?
     ne_sw_ok = (ne == 'M' and sw == 'S') or (ne == 'S' and sw == 'M')
 
     if nw_se_ok and ne_sw_ok then Ok 1 else Err NotFound
@@ -72,14 +72,14 @@ xmas_count = |g, pos|
 
 check_xmas_in_dir : Grid U8, Pos, Dir -> [Err [NotFound, OutOfBounds], Ok U8]
 check_xmas_in_dir = |g, pos, dir|
-    pos_m = Grid.move pos dir
-    m = (Grid.get g pos_m)?
+    pos_m = Gr.move pos dir
+    m = (Gr.get g pos_m)?
 
-    pos_a = Grid.move pos_m dir
-    a = (Grid.get g pos_a)?
+    pos_a = Gr.move pos_m dir
+    a = (Gr.get g pos_a)?
 
-    pos_s = Grid.move pos_a dir
-    s = (Grid.get g pos_s)?
+    pos_s = Gr.move pos_a dir
+    s = (Gr.get g pos_s)?
 
     when (m, a, s) is
         ('M', 'A', 'S') -> Ok 1

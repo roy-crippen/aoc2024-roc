@@ -1,7 +1,7 @@
 module [solution_day_06]
 
 import Util exposing [Solution]
-import Grid exposing [Grid, Dir, Pos]
+import Structures.Grid as Gr exposing [Grid, Dir, Pos]
 import Bool exposing [not]
 import "../data/day_06.txt" as input_str : Str
 
@@ -15,7 +15,7 @@ parse = |s|
     cols = List.first ls |> Util.unwrap |> List.len
     data = List.join ls
     g = { data, rows, cols }
-    pos = Grid.find_positions g (|ch| ch == '^') |> List.first |> Util.unwrap
+    pos = Gr.find_positions g (|ch| ch == '^') |> List.first |> Util.unwrap
     st = { pos, dir: N }
     (g, st)
 
@@ -44,9 +44,9 @@ traverse_grid_part1 = |g, st, xs|
 
 to_next : Grid U8, State -> (State, Status)
 to_next = |g, st|
-    new_pos = Grid.move st.pos st.dir
-    is_inside = Grid.is_inside g new_pos
-    is_guard = is_inside and Grid.get_unsafe g new_pos == '#'
+    new_pos = Gr.move st.pos st.dir
+    is_inside = Gr.is_inside g.rows g.cols new_pos
+    is_guard = is_inside and Gr.get_unsafe g new_pos == '#'
     when (is_inside, is_guard) is
         (b1, b2) if b1 and b2 -> (st, Guard)
         (b1, _) if not b1 -> (st, OutOfBounds)
@@ -156,7 +156,7 @@ part2 = |in_str|
             (|(idx_pos_dir, is_cycle, pos_used), (next_idx, next_pos, next_direction)|
                 (_prev_idx, prev_pos, prev_dir) = idx_pos_dir
                 prev_state = { pos: prev_pos, dir: prev_dir }
-                grid = Grid.set g next_pos '#'
+                grid = Gr.set g next_pos '#'
                 has_pos_been_used = Set.contains pos_used next_idx
                 updated_is_cycle =
                     if
