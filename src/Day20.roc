@@ -15,7 +15,7 @@ parse = |s|
     data = List.join ls
     { data, rows, cols }
 
-find_single_path : Grid U8, Pos -> State
+find_single_path : Grid U8, Pos -> Dict Pos I32
 find_single_path = |g, start_pos|
     go : State -> State
     go = |st|
@@ -45,21 +45,7 @@ find_single_path = |g, start_pos|
     cols = g.cols |> Num.to_i32
     inital_st = { done: false, path: Dict.single(start_pos, 0), pos: start_pos }
     final_st = go(inital_st)
-    final_st
-
-# find_candidates : Pos, I32, Dict Pos I32, I32, I32 -> List Pos
-# find_candidates = |(r, c), radius, path, rows, cols|
-#    xs =
-#        List.range({ start: At 0, end: At radius })
-#        |> List.walk [] |acc, dr|
-#            dc = radius - dr
-#            ls =
-#                [(r + dr, c + dc), (r + dr, c - dc), (r - dr, c + dc), (r - dr, c - dc)]
-#                |> List.keep_if |(row, col)|
-#                    Dict.contains(path, (row, col)) and row > -1 and col > -1 and row < rows and col < cols
-#            List.concat(acc, ls)
-#    dbg xs
-#    xs |> Set.from_list |> Set.to_list
+    final_st.path
 
 find_candidates : Pos, I32, Dict Pos I32, I32, I32 -> List Pos
 find_candidates = |(r, c), radius, path, rows, cols|
@@ -85,6 +71,15 @@ find_candidates = |(r, c), radius, path, rows, cols|
                 else
                     acc1
 
+get_savings : List Pos, Pos, I32, I32, Dict Pos I32 -> U64
+get_savings = |candidates, pivot_pos, offset, limit, path|
+    pivot_dist = Dict.get(path, pivot_pos) |> Util.unwrap
+    candidates
+    |> List.map |p|
+        candidate_dist = Dict.get(path, p) |> Util.unwrap
+        candidate_dist - pivot_dist - offset
+    |> List.count_if(|d| d >= limit)
+
 solution_day_20 : Solution
 solution_day_20 = {
     day: 20,
@@ -99,37 +94,43 @@ expected_part1 : U64
 expected_part1 = 1422
 
 expected_part2 : U64
-expected_part2 = 42
+expected_part2 = 1009299
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
-    get_savings : List Pos, Pos, I32 -> U64
-    get_savings = |candidates, pivot_pos, offset|
-        pivot_dist = Dict.get(st.path, pivot_pos) |> Util.unwrap
-        candidates
-        |> List.map |p|
-            candidate_dist = Dict.get(st.path, p) |> Util.unwrap
-            candidate_dist - pivot_dist - offset
-        |> List.count_if(|d| d >= limit)
-
     g = parse(in_str)
     rows = g.rows |> Num.to_i32
     cols = g.cols |> Num.to_i32
     start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
+    path = find_single_path(g, start_pos)
 
-    st = find_single_path(g, start_pos)
-    limit = 100i32
-    # limit = 20i32
-
-    res = List.walk Dict.keys(st.path) 0 |acc, p|
-        cs = find_candidates(p, 2, st.path, rows, cols)
-        save = get_savings(cs, p, 2)
+    res = List.walk Dict.keys(path) 0 |acc, p|
+        cs = find_candidates(p, 2, path, rows, cols)
+        save = get_savings(cs, p, 2, 100, path)
         (acc + save)
 
     Ok res
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str| Ok 42
+part2 = |in_str|
+    cnt_n : I32 -> U64
+    cnt_n = |n|
+        List.walk Dict.keys(path) 0 |acc, p|
+            cs = find_candidates(p, n, path, rows, cols)
+            save = get_savings(cs, p, n, 100, path)
+            (acc + save)
+
+    g = parse(in_str)
+    rows = g.rows |> Num.to_i32
+    cols = g.cols |> Num.to_i32
+    start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
+    path = find_single_path(g, start_pos)
+
+    res =
+        List.range { start: At 2, end: At 20 }
+        |> List.walk 0 |acc, n| acc + cnt_n(n)
+
+    Ok res
 
 example_str : Str
 example_str =
@@ -154,16 +155,11 @@ example_str =
 # tests
 
 expect part1 example_str == Ok 0
-# expect part1 example_str |> dbg == Ok 5
-# expect part1 input_str == Ok expected_part1
-# expect part2 example_str == Ok 42
-# expect part2 input_str == Ok expected_part2
-
 expect
     g = parse(example_str)
     start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
-    st = find_single_path(g, start_pos)
+    path = find_single_path(g, start_pos)
     #                   |pos, radius, path, rows, cols|
-    cs = find_candidates((7, 7), 2, st.path, 15, 15)
+    cs = find_candidates((7, 7), 2, path, 15, 15)
     # dbg cs
     List.len(cs) == 4
