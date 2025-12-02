@@ -134,13 +134,11 @@ part1 = |in_str|
     limit = 100i32
     # limit = 20i32
 
-    dbg (Dict.len(st.path))
     res = List.walk Dict.keys(st.path) 0 |acc, p|
         cs = find_candidates(p, 2, st.path, rows, cols)
         save = get_savings(cs, p, 2)
         (acc + save)
 
-    dbg res
     Ok res
 
 part2 : Str -> [Err Str, Ok U64]
@@ -168,7 +166,7 @@ example_str =
 
 # tests
 
-# expect part1 example_str == Ok 0
+expect part1 example_str == Ok 0
 # expect part1 example_str |> dbg == Ok 5
 # expect part1 input_str == Ok expected_part1
 # expect part2 example_str == Ok 42
@@ -180,5 +178,5 @@ expect
     st = find_single_path(g, start_pos)
     #                   |pos, radius, path, rows, cols|
     cs = find_candidates((7, 7), 2, st.path, 15, 15)
-    dbg cs
+    # dbg cs
     List.len(cs) == 4
