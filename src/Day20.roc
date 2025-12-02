@@ -85,19 +85,6 @@ find_candidates = |(r, c), radius, path, rows, cols|
                 else
                     acc1
 
-# find_candidates : Pos, I32, Dict Pos I32, I32, I32 -> List Pos
-# find_candidates = |(r, c), radius, path, rows, cols|
-#    xs =
-#        List.range({ start: At 0, end: At radius })
-#        |> List.walk [] |acc, dr|
-#            dc = radius - dr
-#            ls =
-#                [(r + dr, c + dc), (r + dr, c - dc), (r - dr, c + dc), (r - dr, c - dc)]
-#                |> List.keep_if |(row, col)|
-#                    Dict.contains(path, (row, col)) and row > -1 and col > -1 and row < rows and col < cols
-#            List.concat(acc, ls)
-#    xs |> Set.from_list |> Set.to_list
-
 solution_day_20 : Solution
 solution_day_20 = {
     day: 20,
