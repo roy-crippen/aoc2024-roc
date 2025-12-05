@@ -7,25 +7,25 @@ import pf.Stdout
 import pf.Utc
 import Str exposing [concat, count_utf8_bytes, repeat]
 import Util exposing [Solution, blue, green, red, yellow, rounded_str]
-# import Day01 exposing [solution_day_01]
-# import Day02 exposing [solution_day_02]
-# import Day03 exposing [solution_day_03]
-# import Day04 exposing [solution_day_04]
-# import Day05 exposing [solution_day_05]
-# import Day06 exposing [solution_day_06]
-# import Day07 exposing [solution_day_07]
-# import Day08 exposing [solution_day_08]
-# import Day09 exposing [solution_day_09]
-# import Day10 exposing [solution_day_10]
-# import Day11 exposing [solution_day_11]
-# import Day12 exposing [solution_day_12]
-# import Day13 exposing [solution_day_13]
-# import Day14 exposing [solution_day_14]
-# import Day15 exposing [solution_day_15]
-# import Day16 exposing [solution_day_16]
-# import Day17 exposing [solution_day_17]
-# import Day18 exposing [solution_day_18]
-# import Day19 exposing [solution_day_19]
+import Day01 exposing [solution_day_01]
+import Day02 exposing [solution_day_02]
+import Day03 exposing [solution_day_03]
+import Day04 exposing [solution_day_04]
+import Day05 exposing [solution_day_05]
+import Day06 exposing [solution_day_06]
+import Day07 exposing [solution_day_07]
+import Day08 exposing [solution_day_08]
+import Day09 exposing [solution_day_09]
+import Day10 exposing [solution_day_10]
+import Day11 exposing [solution_day_11]
+import Day12 exposing [solution_day_12]
+import Day13 exposing [solution_day_13]
+import Day14 exposing [solution_day_14]
+import Day15 exposing [solution_day_15]
+import Day16 exposing [solution_day_16]
+import Day17 exposing [solution_day_17]
+import Day18 exposing [solution_day_18]
+import Day19 exposing [solution_day_19]
 import Day20 exposing [solution_day_20]
 
 main! = |_args|
@@ -42,25 +42,25 @@ main! = |_args|
 
 sols : List Solution
 sols = [
-    # solution_day_01,
-    # solution_day_02,
-    # solution_day_03,
-    # solution_day_04,
-    # solution_day_05,
-    # solution_day_06,
-    # solution_day_07,
-    # solution_day_08,
-    # solution_day_09,
-    # solution_day_10,
-    # solution_day_11,
-    # solution_day_12,
-    # solution_day_13,
-    # solution_day_14,
-    # solution_day_15,
-    # solution_day_16,
-    # solution_day_17,
-    # solution_day_18,
-    # solution_day_19,
+    solution_day_01,
+    solution_day_02,
+    solution_day_03,
+    solution_day_04,
+    solution_day_05,
+    solution_day_06,
+    solution_day_07,
+    solution_day_08,
+    solution_day_09,
+    solution_day_10,
+    solution_day_11,
+    solution_day_12,
+    solution_day_13,
+    solution_day_14,
+    solution_day_15,
+    solution_day_16,
+    solution_day_17,
+    solution_day_18,
+    solution_day_19,
     solution_day_20,
 ]
 

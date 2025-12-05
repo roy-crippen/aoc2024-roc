@@ -5,6 +5,8 @@ import Util exposing [Solution]
 import Structures.Grid as Gr exposing [Grid, Pos]
 import "../data/day_20.txt" as input_str : Str
 
+# port of https://github.com/roycrippen4/aoc/blob/master/aoc2024/aoc_ocaml/lib/day20.ml
+
 State : { done : Bool, path : Dict Pos I32, pos : Pos }
 
 parse : Str -> Grid U8
@@ -14,6 +16,38 @@ parse = |s|
     cols = List.get ls 0 |> Util.msg_unwrap "should be at least 1 row" |> List.len
     data = List.join ls
     { data, rows, cols }
+
+diamond : I32 -> List (I32, I32, I32)
+diamond = |n|
+    row_n : I32, I32, List (I32, I32, I32) -> List (I32, I32, I32)
+    row_n = |dc, l, acc|
+        if dc > l then
+            acc
+        else
+            dr = l - dc
+            xs1 = [(dr, dc, l)]
+            xs2 = if dc != 0 then List.append(xs1, (dr, -dc, l)) else xs1
+            xs3 = if dr != 0 then List.append(xs2, (-dr, dc, l)) else xs2
+            xs4 = if dc != 0 and dr != 0 then List.append(xs3, (-dr, -dc, l)) else xs3
+            row_n(dc + 1, l, List.concat(acc, xs4))
+
+    layers : I32, List (I32, I32, I32) -> List (I32, I32, I32)
+    layers = |l, acc| if l == 0 then acc else layers(l - 1, row_n(0, l, acc))
+
+    layers n []
+
+cheats : Pos, I32, Dict Pos I32, List (I32, I32, I32), I32, I32 -> I32
+cheats = |(r, c), radius, path, dia, rows, cols|
+    is_inside = |row, col| row >= 0 and row < rows and col >= 0 and col < cols
+    center_steps = Dict.get(path, (r, c)) |> Util.unwrap
+    List.walk dia 0 |acc, (dr, dc, dist)|
+        (r1, c1) = (r + dr, c + dc)
+        if dist <= radius and is_inside(r1, c1) then
+            when Dict.get(path, (r1, c1)) is
+                Ok s -> if s > center_steps and s - center_steps - dist >= 100 then acc + 1 else acc
+                _ -> acc
+        else
+            acc
 
 find_single_path : Grid U8, Pos -> Dict Pos I32
 find_single_path = |g, start_pos|
@@ -47,39 +81,6 @@ find_single_path = |g, start_pos|
     final_st = go(inital_st)
     final_st.path
 
-find_candidates : Pos, I32, Dict Pos I32, I32, I32 -> List Pos
-find_candidates = |(r, c), radius, path, rows, cols|
-    is_inside = |row, col| row >= 0 and row < rows and col >= 0 and col < cols
-
-    List.range { start: At (-radius), end: At radius }
-    |> List.walk [] |acc, dr|
-        abs_dr = Num.abs dr
-        dc = radius - abs_dr
-        if dc == 0 then
-            row = r + dr
-            col = c
-            if is_inside(row, col) and Dict.contains(path, (row, col)) and !List.contains(acc, (row, col)) then
-                List.append acc (row, col)
-            else
-                acc
-        else
-            List.walk [1, -1] acc |acc1, dc_sign|
-                row = r + dr
-                col = c + dc_sign * dc
-                if is_inside(row, col) and Dict.contains(path, (row, col)) and !List.contains(acc1, (row, col)) then
-                    List.append acc1 (row, col)
-                else
-                    acc1
-
-get_savings : List Pos, Pos, I32, I32, Dict Pos I32 -> U64
-get_savings = |candidates, pivot_pos, offset, limit, path|
-    pivot_dist = Dict.get(path, pivot_pos) |> Util.unwrap
-    candidates
-    |> List.map |p|
-        candidate_dist = Dict.get(path, p) |> Util.unwrap
-        candidate_dist - pivot_dist - offset
-    |> List.count_if(|d| d >= limit)
-
 solution_day_20 : Solution
 solution_day_20 = {
     day: 20,
@@ -96,41 +97,21 @@ expected_part1 = 1422
 expected_part2 : U64
 expected_part2 = 1009299
 
-part1 : Str -> [Err Str, Ok U64]
-part1 = |in_str|
+solve : Str, I32 -> U64
+solve = |in_str, radius|
     g = parse(in_str)
     rows = g.rows |> Num.to_i32
     cols = g.cols |> Num.to_i32
     start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
     path = find_single_path(g, start_pos)
+    dia = diamond(radius)
+    List.walk(Dict.keys(path), 0, |acc, p| acc + cheats(p, radius, path, dia, rows, cols)) |> Num.to_u64
 
-    res = List.walk Dict.keys(path) 0 |acc, p|
-        cs = find_candidates(p, 2, path, rows, cols)
-        save = get_savings(cs, p, 2, 100, path)
-        (acc + save)
-
-    Ok res
+part1 : Str -> [Err Str, Ok U64]
+part1 = |in_str| Ok solve(in_str, 2)
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |in_str|
-    cnt_n : I32 -> U64
-    cnt_n = |n|
-        List.walk Dict.keys(path) 0 |acc, p|
-            cs = find_candidates(p, n, path, rows, cols)
-            save = get_savings(cs, p, n, 100, path)
-            (acc + save)
-
-    g = parse(in_str)
-    rows = g.rows |> Num.to_i32
-    cols = g.cols |> Num.to_i32
-    start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
-    path = find_single_path(g, start_pos)
-
-    res =
-        List.range { start: At 2, end: At 20 }
-        |> List.walk 0 |acc, n| acc + cnt_n(n)
-
-    Ok res
+part2 = |in_str| Ok solve(in_str, 20)
 
 example_str : Str
 example_str =
@@ -155,11 +136,8 @@ example_str =
 # tests
 
 expect part1 example_str == Ok 0
+# expect part1 input_str == Ok expected_part1
 expect
-    g = parse(example_str)
-    start_pos = Gr.find_positions(g, |c| c == 'S') |> List.first |> Util.unwrap
-    path = find_single_path(g, start_pos)
-    #                   |pos, radius, path, rows, cols|
-    cs = find_candidates((7, 7), 2, path, 15, 15)
-    # dbg cs
-    List.len(cs) == 4
+    ds = diamond 20
+    List.len(ds) == 840
+
