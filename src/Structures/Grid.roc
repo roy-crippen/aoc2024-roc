@@ -52,11 +52,11 @@ show = |g|
     |> Str.concat "\n"
 
 # pretty print string from a grid
-show_char : Grid U8 -> Str
-show_char = |g|
+show_char : Grid U8, Str -> Str
+show_char = |g, sep|
     List.walk_with_index g.data "" |acc, v_, idx|
         v = Str.from_utf8 [v_] |> Util.msg_unwrap "Str.from_utf8 failed"
-        s = if idx % g.cols == 0 then "\n" else ""
+        s = if idx % g.cols == 0 then "\n" else sep
         acc |> Str.concat s |> Str.concat (Inspect.to_str v)
     |> Str.concat "\n"
     |> Str.replace_each "\"" ""
@@ -198,7 +198,7 @@ g_ : Grid U8
 g_ = make 3 3 '.'
 g_test = set g_ (1, 1) '^'
 
-expect !(show_char g_test |> Str.is_empty)
+expect !(show_char(g_test, "") |> Str.is_empty)
 expect is_inside g_test.rows g_test.cols (0, 0)
 expect is_inside g_test.rows g_test.cols (2, 2)
 expect is_inside g_test.rows g_test.cols (0, 2)
