@@ -7,7 +7,6 @@ module [Compare, Tree, Heap, new, insert, find_min, delete_min, merge, count]
 # A port from Gleam repository:
 #     https://github.com/schurhammer/gleamy_structures/blob/main/src/gleamy/pairing_heap.gleam
 
-
 Compare a : a, a -> [LT, EQ, GT] where a implements Inspect & Eq
 Tree a : [Empty, Tree (a, List (Tree a))] where a implements Inspect & Eq
 Heap a : { root : Tree a, compare : Compare a } where a implements Inspect & Eq
@@ -76,21 +75,23 @@ merge_pairs = |l, compare|
 
 count : Heap a -> U64
 count = |heap|
-    go: (Tree a, U64) ->  (Tree a, U64)
+    go : (Tree a, U64) -> (Tree a, U64)
     go = |(tree, cnt)|
-            when tree is 
-                Tree (_v, ts) ->
-                    (t0, cnt0) = List.walk ts (Empty, cnt) (|(_, acc), t| 
-                           (_, cnt1) = go (t, acc)
-                           (Empty, cnt1)
-                        )
-                    (t0, cnt0 + 1)
-                   
-                Empty -> (Empty, cnt)
-    
+        when tree is
+            Tree (_v, ts) ->
+                (t0, cnt0) = List.walk
+                    ts
+                    (Empty, cnt)
+                    (|(_, acc), t|
+                        (_, cnt1) = go (t, acc)
+                        (Empty, cnt1)
+                    )
+                (t0, cnt0 + 1)
+
+            Empty -> (Empty, cnt)
+
     (_, tree_node_count) = go (heap.root, 0)
     tree_node_count
-    
 
 # tests
 
@@ -117,7 +118,6 @@ delete_test_heap =
     |> insert 4
     |> insert 1
     |> insert 5
-
 
 d1 = delete_min delete_test_heap |> Result.with_default (0, empty_heap)
 d2 = delete_min d1.1 |> Result.with_default (0, empty_heap)

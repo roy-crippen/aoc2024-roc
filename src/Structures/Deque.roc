@@ -221,14 +221,14 @@ expect
     d : Deque U16
     d = empty({}) |> push_front 1u16
     when pop_front d is
-        Ok (x, d2) -> x == 1u16 && is_empty d2
+        Ok (x, d2) -> x == 1u16 and is_empty d2
         Err _ -> Bool.false
 
 expect
     d : Deque U16
     d = empty({}) |> push_back 1u16
     when pop_back d is
-        Ok (x, d2) -> x == 1u16 && is_empty d2
+        Ok (x, d2) -> x == 1u16 and is_empty d2
         Err _ -> Bool.false
 
 expect
