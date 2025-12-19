@@ -18,7 +18,12 @@ module [
     cartesian_product,
     group_by,
     modulus,
+    ascii_list_to_str_list,
+    str_list_to_ascii_list_unsafe,
+    sort_list_str_asc_unsafe,
 ]
+
+import ascii.Ascii
 
 zip : List a, List b -> List (a, b)
 zip = |a, b| List.map2(a, b, |x, y| (x, y))
@@ -180,3 +185,20 @@ modulus : Int a, Int a -> Int a
 modulus = |a, b|
     remainder = Num.rem a b
     if remainder < 0 then remainder + Num.abs b else remainder
+
+ascii_list_to_str_list : List Ascii.Ascii -> List Str
+ascii_list_to_str_list = |xs| xs |> List.map(Ascii.to_str)
+
+str_list_to_ascii_list_unsafe : List Str -> List Ascii.Ascii
+str_list_to_ascii_list_unsafe = |xs| xs |> List.map(|x| Ascii.from_str(x) |> unwrap)
+
+sort_list_str_asc_unsafe : List Str -> List Str
+sort_list_str_asc_unsafe = |xs|
+    xs
+    |> str_list_to_ascii_list_unsafe
+    |> Ascii.sort_asc
+    |> ascii_list_to_str_list
+
+expect
+    sorted = sort_list_str_asc_unsafe(["aaa", "bbb"])
+    sorted == ["aaa", "bbb"]
