@@ -40,7 +40,7 @@ decode = |key|
 find_cliques : Dict Str (Set Str) -> Set (List U16)
 find_cliques = |edges|
     es = Dict.map edges |_k, set| Set.to_list(set)
-    List.walk Dict.keys(es) Set.with_capacity(1024) |acc1, x|
+    List.walk Dict.keys(es) Set.with_capacity(12000) |acc1, x|
         List.walk (Dict.get(es, x) |> unwrap) acc1 |acc2, y|
             List.walk (Dict.get(es, y) |> unwrap) acc2 |acc3, z|
                 if x != z and Set.contains(Dict.get(edges, z) |> unwrap, x) then

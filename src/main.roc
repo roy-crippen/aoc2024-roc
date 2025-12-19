@@ -1,5 +1,6 @@
 app [main!] {
     pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.19.0/Hj-J_zxz7V9YurCSTFcFdu6cQJie4guzsPMUi5kBYUk.tar.br",
+    ascii: "https://github.com/Hasnep/roc-ascii/releases/download/v0.3.1/1PCTQ0tzSijxfhxDg1k_yPtfOXiAk3j283b8EWGusVc.tar.br",
     # parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/0.10.0/6eZYaXkrakq9fJ4oUc0VfdxU1Fap2iTuAN18q9OgQss.tar.br",
 }
 
@@ -27,7 +28,9 @@ import Util exposing [Solution, blue, green, red, yellow, rounded_str]
 # import Day18 exposing [solution_day_18]
 # import Day19 exposing [solution_day_19]
 # import Day20 exposing [solution_day_20]
-import Day21 exposing [solution_day_21]
+# import Day21 exposing [solution_day_21]
+# import Day22 exposing [solution_day_22]
+import Day23 exposing [solution_day_23]
 
 main! = |_args|
     # dirs = Path.from_str "." |> (Path.list_dir! |> Result.with_default []
@@ -63,7 +66,9 @@ sols = [
     # solution_day_18,
     # solution_day_19,
     # solution_day_20,
-    solution_day_21,
+    # solution_day_21,
+    # solution_day_22,
+    solution_day_23,
 ]
 
 run_solution! : Solution => Str
