@@ -48,6 +48,36 @@ find_cliques = |edges|
                 else
                     acc3
 
+bron_kerbosch : Dict Str (Set Str), Set Str, Set Str, Set Str -> Set Str
+bron_kerbosch = |edges, r, p, x|
+    set_choose : Set Str -> Str
+    set_choose = |set| Set.walk_until(set, "", |_acc, s| Break s)
+
+    get_best : Str, (I32, Str) -> (I32, Str)
+    get_best = |v, (best, c)|
+        common = Dict.get(edges, v) |> unwrap |> Set.intersection(p) |> Set.len |> Num.to_i32
+        if common > best then (common, v) else (best, c)
+
+    go : Set Str, Set Str, Set Str, List Str -> Set Str
+    go = |go_p, go_x, best, vs|
+        when vs is
+            [] -> best
+            [v, .. as rest] ->
+                ns = Dict.get(edges, v) |> unwrap
+                clq = bron_kerbosch(edges, Set.insert(r, v), Set.intersection(go_p, ns), Set.intersection(go_x, ns))
+                new_best = if Set.len(clq) > Set.len(best) then clq else best
+                go(Set.remove(go_p, v), Set.insert(go_x, v), new_best, rest)
+
+    if Set.is_empty(p) and Set.is_empty(x) then
+        r
+    else
+        p_set = Set.union(p, x)
+        p_guess = set_choose(p_set)
+        u = Set.walk(p_set, (-1, p_guess), |acc, s| get_best(s, acc))
+        set_u = Dict.get(edges, u.1) |> unwrap
+        ls = Set.difference(p, set_u) |> Set.to_list
+        go(p, x, Set.empty({}), ls)
+
 solution_day_23 : Solution
 solution_day_23 = {
     day: 23,
@@ -62,7 +92,7 @@ expected_part1 : U64
 expected_part1 = 1000
 
 expected_part2 : U64
-expected_part2 = 42
+expected_part2 = 38 # len "cf,ct,cv,cz,fi,lq,my,pa,sl,tt,vw,wz,yd" == 38
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
@@ -75,10 +105,19 @@ part1 = |in_str|
     |> Ok
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str|
-    # time_start1 = Utc.now!({})
-    # d1 = (Num.to_frac Utc.delta_as_nanos(Utc.now!({}), time_start1)) / 1000000.0
-    Ok 42
+part2 = |in_str|
+    edges = parse(in_str)
+    vertices = edges |> Dict.keys |> Set.from_list
+    bron_kerbosch(edges, Set.empty({}), vertices, Set.empty({}))
+    |> Set.to_list
+    |> List.map(encode)
+    |> List.sort_asc
+    |> List.map(decode)
+    |> Str.join_with(",")
+    #  |> dbg
+    |> Str.to_utf8
+    |> List.len
+    |> Ok
 
 example_str : Str
 example_str =
@@ -119,8 +158,6 @@ example_str =
 
 # tests
 
-# expect part1 example_str == Ok 7
-# expect part1 input_str |> dbg == Ok expected_part1
-expect part2 example_str == Ok 42
-# expect part2 input_str == Ok expected_part2
+expect part1 example_str == Ok 7
+expect part2 example_str == Ok 11
 
