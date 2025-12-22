@@ -30,7 +30,8 @@ import Util exposing [Solution, blue, green, red, yellow, rounded_str]
 # import Day20 exposing [solution_day_20]
 # import Day21 exposing [solution_day_21]
 # import Day22 exposing [solution_day_22]
-import Day23 exposing [solution_day_23]
+# import Day23 exposing [solution_day_23]
+import Day24 exposing [solution_day_24]
 
 main! = |_args|
     # dirs = Path.from_str "." |> (Path.list_dir! |> Result.with_default []
@@ -68,7 +69,8 @@ sols = [
     # solution_day_20,
     # solution_day_21,
     # solution_day_22,
-    solution_day_23,
+    # solution_day_23,
+    solution_day_24,
 ]
 
 run_solution! : Solution => Str

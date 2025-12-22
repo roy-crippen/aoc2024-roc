@@ -21,6 +21,7 @@ module [
     ascii_list_to_str_list,
     str_list_to_ascii_list_unsafe,
     sort_list_str_asc_unsafe,
+    show_dict!,
 ]
 
 import ascii.Ascii
@@ -202,3 +203,12 @@ sort_list_str_asc_unsafe = |xs|
 expect
     sorted = sort_list_str_asc_unsafe(["aaa", "bbb"])
     sorted == ["aaa", "bbb"]
+
+show_dict! : Dict k v => {} where k implements Hash & Inspect & Eq, v implements Inspect
+show_dict! = |d|
+    d
+    |> Dict.to_list
+    |> List.for_each! |pair|
+        dbg pair
+        {}
+
