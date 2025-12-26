@@ -4,7 +4,7 @@ import Util exposing [Solution, unwrap]
 import "../data/day_24.txt" as input_str : Str
 
 OpCode : [AND, OR, XOR]
-Expr : { op1 : Str, op2 : Str, op_code : OpCode }
+Expr : { op1 : Str, op2 : Str, op_code : OpCode, out : Str }
 Operand : [V U8, E Expr]
 
 op_code_from_str : Str -> OpCode
@@ -21,8 +21,6 @@ parse = |s|
         when s |> Str.split_on("\n") |> List.split_on("") is
             [vs, es] -> (vs, es)
             _ -> crash "parse error"
-    # dbg vals
-    # dbg exprs
 
     d0 =
         vals
@@ -40,9 +38,9 @@ parse = |s|
             d0,
             |acc, str|
                 when str |> Str.split_on(" ") is
-                    [name1, op_code, name2, _, name3] ->
-                        expr = { op1: name1, op2: name2, op_code: op_code_from_str(op_code) }
-                        Dict.insert(acc, name3, E expr)
+                    [name1, op_code, name2, _, out] ->
+                        expr = { op1: name1, op2: name2, op_code: op_code_from_str(op_code), out }
+                        Dict.insert(acc, out, E expr)
 
                     _ -> crash "parse error",
         )
@@ -64,15 +62,102 @@ eval = |id, d|
             (val, Dict.insert(d2, id, V val))
 
 bits_to_num : List U8 -> U64
-bits_to_num = |xs|
-    (n, _) = List.walk(
-        xs,
+bits_to_num = |vs|
+    (n, _) = List.walk_backwards(
+        vs,
         (0, 0),
         |(acc_res, p), v|
             m = Num.pow_int(2, p)
             (m * Num.to_u64(v) + acc_res, p + 1),
     )
     n
+
+operands_to_u8s : List (Str, Operand), Str -> List U8
+operands_to_u8s = |vs, prefix|
+    vs
+    |> List.map(
+        |(k, v)|
+            num_key = Str.drop_prefix(k, prefix) |> Str.to_u16 |> unwrap
+            bit =
+                when v is
+                    V val -> val
+                    _ -> crash "error, not a value"
+            (num_key, bit),
+    )
+    |> List.sort_with(|(k1, _), (k2, _)| Num.compare k2 k1)
+    |> List.map(|(_k, bit)| bit)
+
+swap : Dict Str Operand, (Str, Str) -> Dict Str Operand
+swap = |d, (s1, s2)|
+    v1 = Dict.get(d, s1) |> unwrap
+    v2 = Dict.get(d, s2) |> unwrap
+    d |> Dict.insert(s2, v1) |> Dict.insert(s1, v2)
+
+make_wire_key : Str, U16 -> Str
+make_wire_key = |ch, num|
+    when num is
+        n if n < 10 -> ch |> Str.concat("0") |> Str.concat(Num.to_str(num))
+        n if n < 100 -> ch |> Str.concat(Num.to_str(num))
+        _ -> crash "invalid parameters to make_wire_key"
+
+find_wire1 : Dict Str Operand, OpCode, Str -> Expr
+find_wire1 = |d, op, key|
+    res =
+        d
+        |> Dict.values
+        |> List.find_first
+            |wire|
+                when wire is
+                    V _ -> Bool.false
+                    E expr -> expr.op_code == op and (expr.op1 == key or expr.op2 == key)
+    when res is
+        Ok (E expr) -> expr
+        _ ->
+            dbg (op, key)
+            crash "key not found in find_wire_1"
+
+find_wire2 : Dict Str Operand, OpCode, Str, Str -> Result Expr [NotFound]
+find_wire2 = |d, op_code, key1, key2|
+    res =
+        d
+        |> Dict.values
+        |> List.find_first
+            |wire|
+                when wire is
+                    V _ -> Bool.false
+                    E expr ->
+                        (expr.op_code == op_code)
+                        and ((expr.op1 == key1 and expr.op2 == key2) or (expr.op1 == key2 and expr.op2 == key1))
+    when res is
+        Ok (E expr) -> Ok expr
+        _ -> Err NotFound
+
+fix_bit_n : Dict Str Operand, U16 -> Result (Dict Str Operand, (Str, Str)) [NotFound]
+fix_bit_n = |d, n|
+    prev_wx = make_wire_key("x", n - 1)
+    prev_wy = make_wire_key("y", n - 1)
+    prev_and = find_wire2(d, AND, prev_wx, prev_wy)?
+    prev_xor = find_wire2(d, XOR, prev_wx, prev_wy)?
+    m2 = find_wire1(d, AND, prev_xor.out)
+    m1 = find_wire2(d, OR, m2.out, prev_and.out)?
+    n_xor = find_wire2(d, XOR, make_wire_key("x", n), make_wire_key("y", n))?
+    to_swap =
+        wz = make_wire_key("z", n)
+        when find_wire2(d, XOR, n_xor.out, m1.out) is
+            Ok zn -> (wz, zn.out)
+            _ ->
+                zn =
+                    when Dict.get(d, wz) is
+                        Ok (E expr) -> expr
+                        _ -> crash "expr not found in fix_bit_n"
+                set1 = Set.from_list([zn.op1, zn.op2])
+                set2 = Set.from_list([n_xor.out, m1.out])
+                diff = Set.union(Set.difference(set1, set2), Set.difference(set2, set1))
+                when diff |> Set.to_list is
+                    [k1, k2] -> (k1, k2)
+                    _ -> crash "Set.difference resultrs is wrong"
+
+    Ok (swap(d, to_swap), to_swap)
 
 solution_day_24 : Solution
 solution_day_24 = {
@@ -88,35 +173,71 @@ expected_part1 : U64
 expected_part1 = 56939028423824
 
 expected_part2 : U64
-expected_part2 = 42
+expected_part2 = 57488782206064 # [(frn, z05), (wnf, vtj), (z21, gmq), (wtt, z39)] => frn,gmq,vtj,wnf,wtt,z05,z21,z39
 
 part1 : Str -> [Err Str, Ok U64]
 part1 = |in_str|
     d = parse(in_str)
-    Dict.keys(d)
-    |> List.keep_if(|s| Str.starts_with(s, "z"))
-    |> List.walk(d, |acc_d, id| (eval(id, acc_d)).1)
-    |> Dict.keep_if(|(k, _v)| Str.starts_with(k, "z"))
-    |> Dict.to_list
-    |> List.map(
-        |(k, v)|
-            num_key = Str.drop_prefix(k, "z") |> Str.to_u16 |> unwrap
-            bit =
-                when v is
-                    V val -> val
-                    _ -> crash "error, not a value"
-            (num_key, bit),
-    )
-    |> List.sort_with(|(k1, _), (k2, _)| Num.compare k1 k2)
-    |> List.map(|(_k, bit)| bit)
-    |> bits_to_num
-    |> Ok
+    zs =
+        Dict.keys(d)
+        |> List.keep_if(|s| Str.starts_with(s, "z"))
+        |> List.walk(d, |acc_d, id| (eval(id, acc_d)).1)
+        |> Dict.keep_if(|(k, _v)| Str.starts_with(k, "z"))
+        |> Dict.to_list
+        |> operands_to_u8s("z")
+    z = zs |> bits_to_num
+    Ok z
+
+# part 2 => find the bad bits
+#                   5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+#                             4                   3                   2                   1
+#
+#  proper carry in: 1 1 1 1 0 0 0 1 1 1 1 1 1 0 1 1 1 1 1 1 0 0 0 1 1 1 0 1 1 0 1 1 0 1 1 0 1 1 1 1 1 1 1 1 1 0
+#               xs: 0 1 1 1 1 1 1 1 1 1 0 1 1 0 0 1 0 1 1 0 1 1 1 1 0 0 1 0 1 1 0 1 0 0 0 1 0 1 1 0 1 0 0 0 1 1
+#               ys: 0 1 0 1 0 0 0 1 0 1 0 0 1 0 1 1 0 0 1 0 1 0 1 0 1 0 0 1 0 1 1 1 0 1 1 1 1 0 1 1 0 0 1 1 0 1
+#        proper zs: 1 1 0 1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 1 1 0 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0 0 1 1 1 0 0 0 0
+#    calculated zs: 1 1 0 0 1 1 1 1 0 0 1 0 0 1 0 0 1 0 0 1 1 0 1 0 0 1 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 0 0
+#                         * * * *                               * * *         *                 * * *
+#                               ^                                   ^         ^                     ^
+#    bad indexes = 39, 21, 16 and 5
 
 part2 : Str -> [Err Str, Ok U64]
-part2 = |_in_str| Ok 42
+part2 = |in_str|
+    d = parse(in_str)
+    fix_bit_indexes = [5, 16, 21, 39]
+    (d_after_swaps, swaps) =
+        fix_bit_indexes
+        |> List.walk(
+            (d, []),
+            |(acc_d, acc_pairs), num|
+                (d_new, pair) = fix_bit_n(acc_d, num) |> unwrap
+                (d_new, List.append(acc_pairs, pair)),
+        )
 
-example_str : Str
-example_str =
+    z_after_swaps =
+        Dict.keys(d_after_swaps)
+        |> List.keep_if(|s| Str.starts_with(s, "z"))
+        |> List.walk(d_after_swaps, |acc_d, id| (eval(id, acc_d)).1)
+        |> Dict.keep_if(|(k, _v)| Str.starts_with(k, "z"))
+        |> Dict.to_list
+        |> operands_to_u8s("z")
+        |> bits_to_num
+
+    # checks
+    x = d |> Dict.keep_if(|(k, _v)| Str.starts_with(k, "x")) |> Dict.to_list |> operands_to_u8s("x") |> bits_to_num
+    y = d |> Dict.keep_if(|(k, _v)| Str.starts_with(k, "y")) |> Dict.to_list |> operands_to_u8s("y") |> bits_to_num
+    expect x + y == z_after_swaps
+
+    (xs, ys) = Util.unzip(swaps)
+    sorted_swaps =
+        List.concat(xs, ys)
+        |> Util.sort_list_str_asc_unsafe
+        |> Str.join_with(",")
+    expect sorted_swaps == "frn,gmq,vtj,wnf,wtt,z05,z21,z39"
+    Ok z_after_swaps
+
+example_str1 : Str
+example_str1 =
     """
     x00: 1
     x01: 0
@@ -169,8 +290,24 @@ example_str =
 
 # tests
 
-expect part1 example_str == Ok 2024
+expect part1 example_str1 == Ok 2024
 expect part1 input_str == Ok expected_part1
-# expect part2 example_str == Ok 42
-# expect part2 input_str == Ok expected_part2
 
+t_xs = [1, 0, 1, 1]
+t_ys = [1, 1, 0, 1]
+t_zs = [1, 1, 0, 0, 0]
+
+expect
+    t_x = bits_to_num(t_xs)
+    t_y = bits_to_num(t_ys)
+    t_z = bits_to_num(t_zs)
+    t_x + t_y == t_z
+
+expect make_wire_key("x", 3) == "x03"
+expect make_wire_key("x", 11) == "x11"
+expect
+    d = parse(input_str)
+    b1 = find_wire1(d, XOR, "wkb") == { op1: "wkb", op2: "drd", op_code: XOR, out: "z04" }
+    b2 = find_wire1(d, AND, "wkb") == { op1: "drd", op2: "wkb", op_code: AND, out: "rhr" }
+    b3 = find_wire1(d, AND, "tfv") == { op1: "wkq", op2: "tfv", op_code: AND, out: "grv" }
+    b1 and b2 and b3
