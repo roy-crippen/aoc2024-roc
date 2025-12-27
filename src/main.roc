@@ -8,69 +8,73 @@ import pf.Stdout
 import pf.Utc
 import Str exposing [concat, count_utf8_bytes, repeat]
 import Util exposing [Solution, blue, green, red, yellow, rounded_str]
-# import Day01 exposing [solution_day_01]
-# import Day02 exposing [solution_day_02]
-# import Day03 exposing [solution_day_03]
-# import Day04 exposing [solution_day_04]
-# import Day05 exposing [solution_day_05]
-# import Day06 exposing [solution_day_06]
-# import Day07 exposing [solution_day_07]
-# import Day08 exposing [solution_day_08]
-# import Day09 exposing [solution_day_09]
-# import Day10 exposing [solution_day_10]
-# import Day11 exposing [solution_day_11]
-# import Day12 exposing [solution_day_12]
-# import Day13 exposing [solution_day_13]
-# import Day14 exposing [solution_day_14]
-# import Day15 exposing [solution_day_15]
-# import Day16 exposing [solution_day_16]
-# import Day17 exposing [solution_day_17]
-# import Day18 exposing [solution_day_18]
-# import Day19 exposing [solution_day_19]
-# import Day20 exposing [solution_day_20]
-# import Day21 exposing [solution_day_21]
-# import Day22 exposing [solution_day_22]
-# import Day23 exposing [solution_day_23]
+import Day01 exposing [solution_day_01]
+import Day02 exposing [solution_day_02]
+import Day03 exposing [solution_day_03]
+import Day04 exposing [solution_day_04]
+import Day05 exposing [solution_day_05]
+import Day06 exposing [solution_day_06]
+import Day07 exposing [solution_day_07]
+import Day08 exposing [solution_day_08]
+import Day09 exposing [solution_day_09]
+import Day10 exposing [solution_day_10]
+import Day11 exposing [solution_day_11]
+import Day12 exposing [solution_day_12]
+import Day13 exposing [solution_day_13]
+import Day14 exposing [solution_day_14]
+import Day15 exposing [solution_day_15]
+import Day16 exposing [solution_day_16]
+import Day17 exposing [solution_day_17]
+import Day18 exposing [solution_day_18]
+import Day19 exposing [solution_day_19]
+import Day20 exposing [solution_day_20]
+import Day21 exposing [solution_day_21]
+import Day22 exposing [solution_day_22]
+import Day23 exposing [solution_day_23]
 import Day24 exposing [solution_day_24]
+import Day25 exposing [solution_day_25]
 
 main! = |_args|
-    # dirs = Path.from_str "." |> (Path.list_dir! |> Result.with_default []
-    # _ = List.map dirs (|p| (Path.display p) |> dbg)
-
+    t = Utc.now!({})
     sols
     |> List.for_each!(
         |sol|
             _ = Stdout.line!(run_solution! sol)
             {},
     )
+    dur = (Num.to_frac Utc.delta_as_nanos(Utc.now!({}), t)) / 1000000.0
+    s = Str.join_with ["total time: ", rounded_str dur 2, "ms"] ""
+    _ = Stdout.line!(blue s)
+
     Ok {}
 
 sols : List Solution
 sols = [
-    # solution_day_01,
-    # solution_day_02,
-    # solution_day_03,
-    # solution_day_04,
-    # solution_day_05,
-    # solution_day_06,
-    # solution_day_07,
-    # solution_day_08,
-    # solution_day_09,
-    # solution_day_10,
-    # solution_day_11,
-    # solution_day_12,
-    # solution_day_13,
-    # solution_day_14,
-    # solution_day_15,
-    # solution_day_16,
-    # solution_day_17,
-    # solution_day_18,
-    # solution_day_19,
-    # solution_day_20,
-    # solution_day_21,
-    # solution_day_22,
-    # solution_day_23,
+    solution_day_01,
+    solution_day_02,
+    solution_day_03,
+    solution_day_04,
+    solution_day_05,
+    solution_day_06,
+    solution_day_07,
+    solution_day_08,
+    solution_day_09,
+    solution_day_10,
+    solution_day_11,
+    solution_day_12,
+    solution_day_13,
+    solution_day_14,
+    solution_day_15,
+    solution_day_16,
+    solution_day_17,
+    solution_day_18,
+    solution_day_19,
+    solution_day_20,
+    solution_day_21,
+    solution_day_22,
+    solution_day_23,
     solution_day_24,
+    solution_day_25,
 ]
 
 run_solution! : Solution => Str
