@@ -10,5 +10,5 @@ roc run --optimize
 ## test
 ```bash
 cd src
-roc test --optimize --verbose
+roc test --verbose
 ```
