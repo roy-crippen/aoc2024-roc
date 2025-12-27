@@ -22,6 +22,7 @@ module [
     str_list_to_ascii_list_unsafe,
     sort_list_str_asc_unsafe,
     show_dict!,
+    transpose_unsafe,
 ]
 
 import ascii.Ascii
@@ -211,4 +212,20 @@ show_dict! = |d|
     |> List.for_each! |pair|
         dbg pair
         {}
+
+#
+transpose_unsafe : List (List a) -> List (List a)
+transpose_unsafe = |matrix|
+    List.map
+        (List.range { start: At 0, end: Before (List.len (List.first matrix |> unwrap)) })
+        |col| List.map matrix |row| List.get row col |> unwrap
+
+expect
+    xs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    ys = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+    ys == transpose_unsafe xs
+expect
+    xs = [["a", "b"], ["c", "d"]]
+    ys = [["a", "c"], ["b", "d"]]
+    ys == transpose_unsafe xs
 
